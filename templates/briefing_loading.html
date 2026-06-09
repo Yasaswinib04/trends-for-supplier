@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+{% block title %}Briefing — {{ trend.name }}{% endblock %}
+{% block sidebar %}{% endblock %}
+{% block head %}
+<style>.sticky-foot { box-shadow: 0 -4px 4px rgba(0,0,0,0.05); }
+.cannot-prove { background:#fff9e6; border-left:3px solid #d97706; }
+.can-prove { border-left:3px solid #16a34a; }
+.spinner { width:40px;height:40px;border:3px solid #ecedfa;border-top:3px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 12px; }
+@keyframes spin { to { transform:rotate(360deg); } }
+</style>
+{% endblock %}
+{% block content %}
+<div class="pb-28">
+
+<header class="border-b border-outline-variant bg-surface sticky top-0 z-10 px-6 py-4">
+    <div class="max-w-6xl mx-auto">
+        <a href="/" class="inline-flex items-center text-primary text-xs font-semibold hover:underline mb-3">
+            <span class="material-symbols-outlined text-sm mr-1">arrow_back</span> Back to Decision Board
+        </a>
+        <h1 class="text-2xl font-semibold text-on-surface">{{ trend.name }}</h1>
+        <p class="text-sm text-on-surface-variant">The Briefing · Disagreement Engine</p>
+    </div>
+</header>
+
+<div class="max-w-6xl mx-auto px-6 py-8" id="briefing-content">
+    <div class="text-center py-16">
+        <div class="spinner"></div>
+        <p class="text-sm text-on-surface-variant font-semibold">Running Disagreement Engine...</p>
+        <p class="text-xs text-on-surface-variant mt-1">Comparing Nykaa, Myntra, and Meesho signals across {{ trend.name }}</p>
+    </div>
+</div>
+
+</div>
+
+<div class="fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-outline-variant sticky-foot z-50 flex items-center px-6">
+    <div class="max-w-6xl mx-auto w-full text-center text-xs text-on-surface-variant">Waiting for analysis...</div>
+</div>
+
+<script>
+window.SRC_DATA = {
+    trend: {{ trend | tojson }},
+    nykaa: {{ nykaa | tojson }},
+    myntra: {{ myntra | tojson }},
+    meesho: {{ meesho | tojson }},
+    reviews: {{ reviews | tojson }},
+    past_bets: {{ past_bets | tojson }}
+};
+
+fetch('/api/briefing/{{ trend.id }}')
+.then(function(r) { return r.json(); })
+.then(function(synth) {
+    window.SYNTH = synth;
+    renderBriefing();
+})
+.catch(function(err) {
+    document.getElementById('briefing-content').innerHTML =
+        '<div class="text-center py-16 text-on-surface-variant">⚠️ Synthesis failed: ' + err.message + '<br/><a href="/" class="text-primary text-sm">Back to Decision Board</a></div>';
+});
+
+function renderBriefing() {
+    var s = window.SYNTH;
+    var t = window.SRC_DATA.trend;
+    var ny = window.SRC_DATA.nykaa;
+    var my = window.SRC_DATA.myntra;
+    var ms = window.SRC_DATA.meesho;
+    var rv = window.SRC_DATA.reviews;
+    var pb = window.SRC_DATA.past_bets;
+
+    var betClr = s.bet_lean === 'STRONG BUY' ? '#16a34a' : s.bet_lean === 'CAUTIOUS BUY' ? '#2563eb' : s.bet_lean === 'SMALL TRIAL' ? '#ca8a04' : '#6b7280';
+    var confClr = s.evidence_confidence === 'INSUFFICIENT' ? 'bg-error-container text-on-error-container border-error' : s.evidence_confidence === 'LOW' ? 'bg-stagnant-container text-[#2a1700] border-stagnant' : s.evidence_confidence === 'MEDIUM' ? 'bg-surface-container-high text-on-surface-variant border-outline-variant' : 'bg-success-container text-[#002204] border-success';
+
+    var conflicts = s.conflicts || [];
+    var highConflicts = conflicts.filter(function(c){ return c.severity === 'HIGH'; });
+
+    var html = '';
+
+    // Insufficient data state
+    if (s.bet_lean === 'INSUFFICIENT DATA' || s.evidence_confidence === 'INSUFFICIENT') {
+        html += '<div class="bg-error-container border border-error rounded p-6 mb-6 text-center">';
+        html += '<div class="text-4xl mb-2">⚠️</div>';
+        html += '<h2 class="text-xl font-bold mb-2 text-on-error-container">Insufficient Evidence to Recommend</h2>';
+        html += '<p class="text-sm text-on-error-container">' + (s.headline || 'Not enough data.') + '</p></div>';
+    }
+
+    // Disagreement banner
+    if (highConflicts.length) {
+        html += '<div class="bg-error-container border border-error rounded p-5 mb-4">';
+        html += '<div class="flex items-center gap-2 text-on-error-container font-bold">⚡ Sources disagree on this trend. This gap is the decision.</div>';
+        html += '<p class="text-sm text-on-error-container mt-1">' + highConflicts.map(function(c){ return c.title; }).join('. ') + '</p></div>';
+    } else if (conflicts.length) {
+        html += '<div class="bg-stagnant-container border border-stagnant rounded p-4 mb-4"><span class="text-sm font-semibold">Sources show tension. ' + conflicts.length + ' conflict(s).</span></div>';
+    }
+
+    // Headline + Verdict
+    html += '<div class="bg-surface-container-low border border-outline-variant rounded p-5 flex items-center justify-between mb-4">';
+    html += '<div class="flex-1 text-sm">' + (s.headline || '') + '</div>';
+    html += '<div class="text-right ml-4 shrink-0"><div class="text-xs text-on-surface-variant mb-1">System Verdict</div>';
+    html += '<div class="text-2xl font-bold" style="color:' + betClr + '">' + (s.bet_lean || 'WAIT') + '</div></div></div>';
+
+    // Key Uncertainty
+    html += '<div class="bg-surface p-4 rounded border border-outline-variant mb-4">';
+    html += '<div class="text-xs font-semibold uppercase mb-1">Key Uncertainty</div>';
+    html += '<p class="text-sm">' + (s.key_uncertainty || 'Not assessed.') + '</p>';
+    if (s.bet_rationale) html += '<div class="text-xs text-on-surface-variant mt-2">' + s.bet_rationale + '</div></div>';
+
+    // Source Quality
+    if (s.source_quality) {
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-4">';
+        html += '<div class="text-xs font-semibold uppercase mb-2">Source Quality</div><div class="grid grid-cols-3 gap-3 text-xs">';
+        ['nykaa','myntra','meesho'].forEach(function(src){
+            var q = s.source_quality[src] || {};
+            html += '<div><span class="font-semibold">' + src + ':</span> ' + (q.level || '🔴') + ' <span class="block text-on-surface-variant mt-0.5">' + (q.reason || '') + '</span></div>';
+        });
+        html += '</div></div>';
+    }
+
+    // Two-column: image + analysis
+    html += '<div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">';
+
+    // Left: image
+    html += '<div class="md:col-span-3">';
+    if (t.image_url) {
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden mb-2">';
+        html += '<img src="' + t.image_url + '" class="w-full object-cover" style="max-height:420px" onerror="this.style.display=\'none\'" /></div>';
+    }
+    html += '<div class="text-xs text-center">' + (t.price_band || '') + ' · ' + (t.silhouette || '') + ' · ' + (t.fabric || '') + '</div>';
+    html += '</div>';
+
+    // Right: analysis
+    html += '<div class="md:col-span-9">';
+
+    // Upside/Catch
+    html += '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">';
+    html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-5"><div class="text-success text-sm font-semibold mb-2">📈 THE UPSIDE</div><p class="text-sm">' + (s.upside_summary || '') + '</p></div>';
+    html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-5"><div class="text-stagnant text-sm font-semibold mb-2">⚠️ THE CATCH</div><p class="text-sm">' + (s.catch_summary || '') + '</p></div>';
+    html += '</div>';
+
+    // Conflicts
+    conflicts.forEach(function(c){
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-3">';
+        html += '<div class="text-sm font-bold mb-2" style="color:' + (c.severity === 'HIGH' ? '#ba1a1a' : '#d97706') + '">' + (c.flag || '') + '</div>';
+        html += '<div class="text-sm font-semibold mb-1">' + c.title + '</div>';
+        html += '<div class="text-xs text-on-surface-variant mb-3">' + c.buyer_question + '</div>';
+        html += '<div class="grid grid-cols-3 gap-3 mb-3 text-xs">';
+        html += '<div class="bg-surface-container p-2 rounded"><span class="font-semibold">Nykaa:</span> ' + c.nykaa_says + '</div>';
+        html += '<div class="bg-surface-container p-2 rounded"><span class="font-semibold">Myntra:</span> ' + c.myntra_says + '</div>';
+        html += '<div class="bg-surface-container p-2 rounded"><span class="font-semibold">Meesho:</span> ' + c.meesho_says + '</div></div>';
+        if (c.proves || c.cannot_prove) {
+            html += '<div class="grid grid-cols-2 gap-2 text-xs">';
+            if (c.proves) html += '<div class="can-prove pl-2 py-1"><span class="text-success">✅ Proves:</span> ' + c.proves + '</div>';
+            if (c.cannot_prove) html += '<div class="cannot-prove pl-2 py-1"><span class="text-stagnant">⚠️ Cannot prove:</span> ' + c.cannot_prove + '</div>';
+            html += '</div>';
+        }
+        html += '</div>';
+    });
+
+    // Convergences
+    (s.convergences || []).forEach(function(c){
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 mb-2">';
+        html += '<div class="text-sm font-semibold text-success mb-1">' + c.title + '</div>';
+        html += '<div class="text-xs text-on-surface-variant">' + (c.detail || '') + '</div></div>';
+    });
+
+    html += '</div></div>'; // close analysis col + grid
+
+    // Past Outcomes
+    if (pb.length) {
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-4"><div class="text-sm font-semibold mb-2">📊 Past Outcomes</div>';
+        pb.forEach(function(b){
+            html += '<div class="border border-outline-variant rounded p-3 mb-2" style="border-left:4px solid ' + (b.outcome === 'success' ? '#16a34a' : b.outcome === 'underperformed' ? '#dc2626' : '#d97706') + '">';
+            html += '<div class="flex justify-between text-sm font-semibold">' + b.trend_name + '<span class="text-xs px-2 py-0.5 rounded border">' + b.outcome + '</span></div>';
+            html += '<div class="text-xs text-on-surface-variant mt-1">' + b.season + ' | Sell-through: ' + b.sell_through + '% | Margin: ' + b.margin + '%</div>';
+            html += '<div class="text-xs mt-1 text-on-surface-variant">' + b.main_issue + '</div>';
+            html += '<div class="text-xs mt-1 font-semibold text-tertiary">Key learning: ' + b.key_learning + '</div></div>';
+        });
+        html += '</div>';
+    }
+
+    // Watch + Missing
+    html += '<div class="grid grid-cols-2 gap-4 mb-4">';
+    html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4"><div class="text-sm font-semibold mb-2">🔭 What to Watch</div>';
+    (s.watch_triggers || []).forEach(function(w){ html += '<div class="text-xs mb-1">- ' + w + '</div>'; });
+    html += '</div><div class="bg-surface-container-lowest border border-outline-variant rounded p-4"><div class="text-sm font-semibold mb-2">❓ Missing Evidence</div>';
+    (s.missing_evidence || []).forEach(function(m){ html += '<div class="text-xs mb-1">- ' + m + '</div>'; });
+    html += '</div></div>';
+
+    // Reviews
+    html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-4"><div class="text-sm font-semibold mb-2">💬 Customer Sentiment</div>';
+    if (rv.available) {
+        html += '<div class="grid grid-cols-2 gap-3 text-xs"><div><div class="font-semibold mb-1">👍 Praise</div>';
+        (rv.praise || []).slice(0,3).forEach(function(p){ html += '<div class="mb-1">💬 ' + p + '</div>'; });
+        html += '</div><div><div class="font-semibold mb-1">👎 Complaints</div>';
+        (rv.complaints || []).slice(0,3).forEach(function(c){ html += '<div class="mb-1">💬 ' + c + '</div>'; });
+        html += '</div></div>';
+    } else { html += '<div class="text-xs">No review data yet.</div>'; }
+    html += '</div>';
+
+    document.getElementById('briefing-content').innerHTML = html;
+    document.querySelector('.sticky-foot').innerHTML = '<div class="max-w-6xl mx-auto w-full flex items-center justify-between"><div><span class="text-xs font-semibold">System:</span> <span class="text-sm font-semibold" style="color:' + betClr + '">' + (s.bet_lean || '') + '</span></div><div class="flex gap-2">' +
+        '<button onclick="document.getElementById(\'override-modal\').classList.add(\'dd-open\')" class="px-4 py-2 border text-xs rounded hover:bg-surface-container">Override</button>' +
+        (s.bet_lean !== 'INSUFFICIENT DATA' ? '<button onclick="commitBet()" class="px-4 py-2 bg-[#16a34a] text-white text-xs rounded hover:opacity-90">Approve Bet</button> <span id="commit-success" class="hidden text-xs text-success ml-2">✅ Bet Logged</span>' : '') +
+        '</div></div>';
+}
+
+function commitBet() {
+    fetch('/api/commit', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trend_id:'{{ trend.id }}',trend_name:'{{ trend.name }}',system_bet:window.SYNTH?.bet_lean||'',notes:''})})
+    .then(function() {
+        var el = document.getElementById('commit-success'); if (el) el.classList.remove('hidden');
+    });
+}
+</script>
+
+<div id="override-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
+    <div class="absolute inset-0" style="backdrop-filter:blur(8px);background:rgba(25,27,36,0.4)" onclick="document.getElementById('override-modal').classList.remove('dd-open')"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md border border-outline-variant p-6">
+        <h3 class="text-lg font-semibold mb-3">Override Rationale</h3>
+        <select id="override-reason" class="w-full border border-outline-variant rounded p-2 text-sm mb-3 bg-surface">
+            <option value="">Select reason</option>
+            <option>Lead time exceeds buying window</option><option>Margin threshold breached</option>
+            <option>Target audience mismatch</option><option>Silhouette not aligned with core</option><option>Other</option>
+        </select>
+        <input id="override-notes" class="w-full border border-outline-variant rounded p-2 text-sm mb-3 bg-surface" placeholder="Notes"/>
+        <div class="flex justify-end gap-2">
+            <button onclick="document.getElementById('override-modal').classList.remove('dd-open')" class="px-4 py-2 text-sm rounded hover:bg-surface-container">Cancel</button>
+            <button onclick="submitOverride()" class="px-4 py-2 text-sm bg-tertiary text-white rounded hover:opacity-90">Confirm</button>
+        </div>
+    </div>
+</div>
+<script>
+function submitOverride() {
+    var r = document.getElementById('override-reason').value; if (!r) return alert('Select a reason.');
+    fetch('/api/override', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trend_id:'{{ trend.id }}',trend_name:'{{ trend.name }}',system_bet:window.SYNTH?.bet_lean||'',reason:r,notes:document.getElementById('override-notes').value})})
+    .then(function(){ alert('Override logged: '+r); document.getElementById('override-modal').classList.remove('dd-open'); });
+}
+</script>
+{% endblock %}

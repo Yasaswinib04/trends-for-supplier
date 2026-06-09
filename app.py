@@ -72,6 +72,8 @@ def decision_board():
         action_items=action_items, watching=watching,
         scanned_trends=scanned, trends=TRENDS)
 
+_synth_cache = {}
+
 @app.route("/briefing/<trend_id>")
 def briefing(trend_id):
     trend = next((t for t in TRENDS if t["id"] == trend_id), None)
@@ -82,17 +84,29 @@ def briefing(trend_id):
     myntra = get_marketplace_data(trend_id)
     meesho = get_meesho_data(trend_id)
     reviews = get_review_signals(trend_id)
-    synth = synthesize(trend, nykaa, myntra, meesho)
-
     prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
-
-    # Load relevant past bets
     past = [b for b in PAST_BETS if b.get("current_trend_id") == trend_id]
 
-    return render_template("briefing.html",
+    # Render instantly with loading state. JS will call /api/briefing/{id}
+    return render_template("briefing_loading.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
-        reviews=reviews, synth=synth, prio=prio, label=label, color=color,
-        past_bets=past)
+        reviews=reviews, prio=prio, label=label, color=color, past_bets=past)
+
+@app.route("/api/briefing/<trend_id>")
+def api_briefing(trend_id):
+    trend = next((t for t in TRENDS if t["id"] == trend_id), None)
+    if not trend:
+        return jsonify({"error": "Trend not found"}), 404
+
+    if trend_id in _synth_cache:
+        return jsonify(_synth_cache[trend_id])
+
+    nykaa  = get_nykaa_data(trend_id)
+    myntra = get_marketplace_data(trend_id)
+    meesho = get_meesho_data(trend_id)
+    synth = synthesize(trend, nykaa, myntra, meesho)
+    _synth_cache[trend_id] = synth
+    return jsonify(synth)
 
 
 def _scan_live_trends():

@@ -23,8 +23,25 @@ def _clean_json(raw: str) -> str:
     match = re.search(r"\{.*\}", stripped, re.DOTALL)
     return match.group(0) if match else stripped
 
+SYNTHESIS_CACHE_FILE = ROOT_DIR / "data" / "syntheses_cache.json"
+
+def _load_cache():
+    if SYNTHESIS_CACHE_FILE.exists():
+        with open(SYNTHESIS_CACHE_FILE, "r") as f:
+            return json.load(f)
+    return {}
+
+def _save_cache(cache):
+    with open(SYNTHESIS_CACHE_FILE, "w") as f:
+        json.dump(cache, f, indent=2)
+
 
 def synthesize(trend, nykaa_data, myntra_data, meesho_data):
+    trend_id = trend["id"]
+    cache = _load_cache()
+    if trend_id in cache:
+        return cache[trend_id]
+
     client = _get_client()
 
     user_prompt = f"""## Trend Under Evaluation
@@ -65,7 +82,8 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
             ],
             temperature=0.3,
             response_format={"type": "json_object"},
-            max_tokens=2500,
+            max_tokens=4000,
+            timeout=45,
         )
         content = response.choices[0].message.content
         result = json.loads(_clean_json(content))
@@ -79,6 +97,8 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
         else:
             result["_has_trace"] = len(trace)
 
+        cache[trend_id] = result
+        _save_cache(cache)
         return result
     except Exception as e:
         return {

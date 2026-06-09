@@ -1,0 +1,116 @@
+{
+  "chanderi-straight": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "what_data_shows": "Two premium brands (Suta, Ritu Kumar) sell Chanderi silk straight kurtis at \u20b91,450-2,200 with near-zero discount, high ratings, and editorial placement. One product shows limited sizes (stock pressure).",
+        "what_it_proves": "\u2705 Premium urban consumers are willing to pay full price for Chanderi silk straight kurtis with zari border. The trend has strong demand at \u20b91,200-2,200.",
+        "what_it_cannot_prove": "\u26a0\ufe0f Cannot prove that value-fashion consumers at \u20b9699-899 will buy this style. Premium demand does not guarantee mass-market adoption.",
+        "relationship_to_others": "Nykaa's strong premium signal contrasts with Meesho's weak imitation signal, suggesting the trend may not have trickled down to price-sensitive markets yet. Myntra/Ajio shows moderate demand at \u20b9899-949, bridging the gap."
+      },
+      {
+        "source": "Myntra/Ajio",
+        "what_data_shows": "Biba's Chanderi silk straight kurti ranks #3 on Myntra and #8 on Ajio, priced at \u20b9899-949 with 15-20% discount, high reviews (1,240 on Myntra), and moderate review velocity.",
+        "what_it_proves": "\u2705 Organized mass retail demand exists for this style at \u20b9899-949. The high review count and rank indicate genuine consumer interest, not just discount-driven sales.",
+        "what_it_cannot_prove": "\u26a0\ufe0f Cannot prove that demand is sustainable at full price (\u20b9899 without discount). The 15-20% discount may be necessary to drive volume. Also cannot prove demand at lower price points (\u20b9699).",
+        "relationship_to_others": "Myntra/Ajio's signal is stronger than Meesho's but weaker than Nykaa's. It aligns with Nykaa in confirming the style's appeal, but the discount suggests price sensitivity that Nykaa's premium buyers don't show."
+      },
+      {
+        "source": "Meesho",
+        "what_data_shows": "One imitation product (cotton, not silk) at \u20b9349 has sold 1,800+ units with 45 resellers, but rating is low (3.4) and reseller growth is not accelerating. No genuine Chanderi silk product found.",
+        "what_it_proves": "\u2705 There is emerging volume for a 'Chanderi look' at very low price points in tier-2/3/4 markets. The 1,800+ units sold indicate some demand for the aesthetic.",
+        "what_it_cannot_prove": "\u26a0\ufe0f Cannot prove demand for actual Chanderi silk at \u20b9699-899. The imitation product's low rating and non-accelerating growth suggest quality issues or limited repeat purchase. Also cannot prove that the trend is sustainable.",
+        "relationship_to_others": "Meesho's weak signal contrasts with Nykaa's strong premium signal and Myntra's moderate signal. The price gap (\u20b9349 vs \u20b9899) and fabric difference (cotton vs silk) indicate the trend has not yet reached the mass market in its authentic form."
+      },
+      {
+        "source": "cross-source synthesis",
+        "key_tensions": "Nykaa shows strong premium demand with zero discount, while Myntra/Ajio shows moderate demand with 15-20% discount, and Meesho shows weak demand for an imitation at a much lower price. The main tension is whether the trend can succeed at the target price of \u20b9699-899 without heavy discounting.",
+        "key_convergences": "All three sources confirm some level of demand for the Chanderi silk straight kurti aesthetic. Nykaa and Myntra/Ajio both show high ratings and positive reviews. The style is validated across premium and mass retail, though at different price points."
+      }
+    ],
+    "headline": "\u26a1 Sources disagree: Premium demand is strong (Nykaa), mass retail shows moderate demand with discount (Myntra/Ajio), but price-sensitive market shows only weak imitation signal (Meesho).",
+    "conflicts": [
+      {
+        "severity": "HIGH",
+        "flag": "[CONFLICT DETECTED: HIGH]",
+        "title": "Price point viability: \u20b9699-899 target vs. actual market pricing",
+        "nykaa_says": "Premium buyers pay \u20b91,450-2,200 full price; trickle-down potential estimated at \u20b9926.",
+        "myntra_says": "Mass retail sells at \u20b9899-949 with 15-20% discount; demand is real but price-sensitive.",
+        "meesho_says": "Only an imitation at \u20b9349 sells; no genuine Chanderi silk product at \u20b9699-899 is listed.",
+        "buyer_question": "Will value-fashion consumers buy authentic Chanderi silk at \u20b9699-899, or will they reject it as too expensive compared to \u20b9349 imitations?",
+        "proves": "\u2705 This conflict proves that the trend has a clear price ceiling in mass markets. The discount on Myntra and the imitation on Meesho suggest that \u20b9699-899 may be at the upper edge of mass-market willingness to pay.",
+        "cannot_prove": "\u26a0\ufe0f Cannot prove that \u20b9699-899 is too high. The imitation product's low rating may indicate poor quality, not price resistance. A well-executed product at \u20b9699 could still succeed.",
+        "raw_evidence_keys": [
+          "nykaa_avg_price",
+          "myntra_price",
+          "meesho_price",
+          "discount_distortion_risk"
+        ]
+      },
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Fabric authenticity: Chanderi silk vs. imitation",
+        "nykaa_says": "Premium brands sell authentic Chanderi silk; high ratings confirm quality.",
+        "myntra_says": "Biba sells Chanderi silk (likely blended) at \u20b9899; good reviews.",
+        "meesho_says": "Only 'Cotton Chanderi Look' imitation available; low rating (3.4).",
+        "buyer_question": "Should the product use authentic Chanderi silk (higher cost, premium positioning) or a blended/art silk version (lower cost, mass appeal)?",
+        "proves": "\u2705 This conflict proves that authentic Chanderi silk commands a premium and higher satisfaction, but the mass market may accept a lower-quality version if priced right.",
+        "cannot_prove": "\u26a0\ufe0f Cannot prove that a blended version would fail. The imitation's low rating may be due to poor execution, not the fabric itself.",
+        "raw_evidence_keys": [
+          "nykaa_fabric",
+          "myntra_fabric",
+          "meesho_fabric",
+          "avg_rating"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Style validation: Chanderi silk straight kurti with zari border is in demand",
+        "detail": "Nykaa and Myntra/Ajio both show strong demand signals (high ratings, good reviews, editorial placement). Meesho's imitation also sells volume, confirming the aesthetic appeal.",
+        "proves": "\u2705 This convergence proves that the style has broad appeal across premium and mass segments.",
+        "cannot_prove": "\u26a0\ufe0f Cannot prove that the demand is sustainable at the target price point or that it will not be cannibalized by cheaper imitations."
+      },
+      {
+        "title": "Positive ratings across platforms",
+        "detail": "Nykaa average rating 4.55, Myntra/Ajio average 4.15. Both indicate customer satisfaction with the product.",
+        "proves": "\u2705 This convergence proves that when consumers buy this style, they are generally satisfied.",
+        "cannot_prove": "\u26a0\ufe0f Cannot prove that satisfaction will hold at a lower price point or with different fabric quality."
+      }
+    ],
+    "upside_summary": "The bull case: Strong premium demand on Nykaa (full-price, high ratings) and solid mass-market demand on Myntra/Ajio (high rank, many reviews) confirm the style's appeal. The trickle-down potential from Nykaa's \u20b91,450-2,200 to a \u20b9699-899 price point is plausible, especially if the product uses authentic Chanderi silk. Meesho's imitation sales (1,800+ units) show latent demand in tier-2/3/4 markets. However, this evidence cannot prove that the mass market will pay \u20b9699-899 for authentic silk versus a cheaper imitation.",
+    "catch_summary": "The bear case: Myntra/Ajio's 15-20% discount suggests price sensitivity even at \u20b9899. Meesho's imitation at \u20b9349 with low ratings indicates that price-sensitive consumers may reject higher-priced options or expect deep discounts. The conflict between Nykaa's premium full-price signal and Meesho's cheap imitation raises the risk that the target price point falls into a 'no-man's land'\u2014too expensive for value shoppers, not premium enough for Nykaa's audience. This evidence cannot prove that the product will achieve sufficient volume without heavy discounting.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe2",
+        "reason": "Recent data (June 7), multiple products, strong signal with stock pressure and editorial placement."
+      },
+      "myntra": {
+        "level": "\ud83d\udfe2",
+        "reason": "Recent data (June 5), high review counts, clear ranking signals. Discount is moderate but not distorting."
+      },
+      "meesho": {
+        "level": "\ud83d\udfe1",
+        "reason": "Data from June 8, but only one imitation product found. Low rating and non-accelerating growth limit reliability. No authentic Chanderi silk product listed."
+      }
+    },
+    "bet_lean": "CAUTIOUS BUY",
+    "bet_rationale": "The style is validated across premium and mass retail, but the target price point of \u20b9699-899 sits between Meesho's \u20b9349 imitation and Myntra's discounted \u20b9899. Test in representative stores with a small batch to gauge price sensitivity. Avoid large commitments until Meesho shows stronger signal for authentic Chanderi silk.",
+    "key_uncertainty": "Will value-fashion consumers pay \u20b9699-899 for authentic Chanderi silk, or will they prefer cheaper imitations?",
+    "evidence_confidence": "MEDIUM",
+    "watch_triggers": [
+      "Meesho listings for genuine Chanderi silk at \u20b9399-599",
+      "Myntra/Ajio discount levels: if discounts increase above 20%, demand may be weaker",
+      "Nykaa stock pressure: if Suta product goes out of stock, premium demand is confirmed",
+      "Reseller growth on Meesho for any Chanderi-style product"
+    ],
+    "missing_evidence": [
+      "Direct consumer survey data on willingness to pay for Chanderi silk at \u20b9699-899",
+      "Sales data from offline ethnic wear stores for similar products",
+      "Return rate data for Chanderi silk kurtis on any platform"
+    ],
+    "_mode": "disagreement_engine",
+    "_has_trace": 4
+  }
+}

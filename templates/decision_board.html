@@ -45,11 +45,13 @@
                             <h3 class="text-lg font-medium text-on-surface">{{ t.name }}</h3>
                         </div>
                         <div class="flex flex-wrap gap-3 text-[13px] text-on-surface-variant">
-                            <span>Sources disagree: {% if t.id == 'chanderi-straight' %}Premium demand vs mass-market absence{% else %}Strong demand vs narrow window{% endif %}</span>
+                            <span class="line-clamp-1 flex-1">{{ t.signal_summary }}</span>
                             <span class="text-outline-variant">|</span>
-                            <span class="font-mono text-xs">{{ t.price_band }} · {{ t.season }}</span>
+                            <span class="font-mono text-xs whitespace-nowrap">{{ t.price_band }} · {{ t.season }}</span>
+                            {% if t.risk_score is defined and t.risk_score >= 3 %}
                             <span class="text-outline-variant">|</span>
-                            <span class="text-[11px] text-tertiary">{% if t.id == 'chanderi-straight' %}⚠️ Fabric commitment · irreversible{% else %}⚠️ Seasonal window · festive cutoff{% endif %}</span>
+                            <span class="text-[11px] text-tertiary whitespace-nowrap">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
+                            {% endif %}
                         </div>
                     </div>
                     <span class="text-primary text-sm font-semibold whitespace-nowrap group-hover:underline">Analyze →</span>
@@ -81,12 +83,12 @@
                             <h3 class="text-lg font-medium text-on-surface">{{ t.name }}</h3>
                         </div>
                         <div class="flex flex-wrap gap-3 text-[13px] text-on-surface-variant">
-                            <span>{{ t.price_band }} · {{ t.season }}</span>
+                            <span class="line-clamp-1 flex-1">{{ t.signal_summary }}</span>
                             <span class="text-outline-variant">|</span>
-                            <span class="font-mono text-xs">{{ t.signal_summary[:55] }}</span>
+                            <span class="font-mono text-xs whitespace-nowrap">{{ t.price_band }} · {{ t.season }}</span>
                             {% if t.risk_score is defined and t.risk_score >= 3 %}
                             <span class="text-outline-variant">|</span>
-                            <span class="text-[11px] text-tertiary">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
+                            <span class="text-[11px] text-tertiary whitespace-nowrap">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
                             {% endif %}
                         </div>
                     </div>
