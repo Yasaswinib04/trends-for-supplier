@@ -48,18 +48,22 @@ def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None):
 {json.dumps({"name": trend["name"], "price_band": trend.get("price_band", ""), "season": trend.get("season", ""), "silhouette": trend.get("silhouette", ""), "fabric": trend.get("fabric", "")}, indent=2)}
 
 ## Source 1: Nykaa Fashion — Premium D2C Demand
+PRESENCE: {nykaa_data.get("nykaa_presence", "unknown")}. Full-price products: {nykaa_data.get("full_price_products", 0)}. Avg price: ₹{nykaa_data.get("avg_price", 0):.0f}.
 {json.dumps(nykaa_data, indent=2)}
 
 ## Source 2: Myntra/Ajio — Organized Mass Retail
+PRESENCE: {myntra_data.get("marketplace_presence", "unknown")}. Discount risk: {myntra_data.get("discount_distortion_risk", "unknown")}.
 {json.dumps(myntra_data, indent=2)}
 
 ## Source 3: Meesho — Price-Sensitive Mass Market
+PRESENCE: {meesho_data.get("meesho_presence", "unknown")}. Units: {meesho_data.get("total_units_sold", 0):,}. Resellers: {meesho_data.get("total_resellers", 0)}.
 {json.dumps(meesho_data, indent=2)}
 
-## Source 4: Internal POS — Our Own Store Sales (GROUND TRUTH)
-{json.dumps(internal_data or {"has_internal_data": False, "note": "No prior buy history."}, indent=2)}
+## Source 4: Internal POS — Your Own Store Sales
+HAS DATA: {"Yes" if (internal_data or {}).get("has_internal_data") else "No prior buy history. Do NOT flag as conflict."}
+{json.dumps(internal_data or {"has_internal_data": False}, indent=2)}
 
-Analyze the evidence using the Disagreement Engine rules. Detect all conflicts, paying special attention to where internal store data contradicts external signals. Output the structured JSON as specified."""
+Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. Output the structured JSON as specified."""
 
     if not client:
         return {
@@ -83,9 +87,9 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts, 
                 {"role": "system", "content": DISAGREEMENT_ENGINE_PROMPT},
                 {"role": "user", "content": user_prompt},
             ],
-            temperature=0.3,
+            temperature=0.0,
             response_format={"type": "json_object"},
-            max_tokens=2000,
+            max_tokens=2500,
             timeout=30,
         )
         content = response.choices[0].message.content
@@ -94,11 +98,15 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts, 
 
         # Validate Chain-of-Thought reasoning trace
         trace = result.get("reasoning_trace")
-        if not trace or not isinstance(trace, list) or len(trace) < 3:
+        if not trace or not isinstance(trace, list) or len(trace) < 4:
             result["_missing_trace"] = True
             result["_mode"] = "disagreement_engine (no CoT)"
         else:
+            # Check if proves/cannot_prove are present per source
+            has_proves = any("proves" in t for t in trace)
             result["_has_trace"] = len(trace)
+            if not has_proves:
+                result["_missing_proves"] = True
 
         cache[trend_id] = result
         _save_cache(cache)
