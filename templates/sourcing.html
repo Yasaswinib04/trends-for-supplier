@@ -1,46 +1,59 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="max-w-6xl mx-auto px-6 py-8 pb-32">
+
+    <!-- Flow explanation -->
+    <div class="flex items-center gap-3 mb-6 text-sm">
+        <span class="text-on-surface-variant">Bet committed</span>
+        <span class="text-outline-variant">→</span>
+        <span class="bg-surface-container-low px-3 py-1 rounded border border-outline-variant font-semibold">Auto-generated PO</span>
+        <span class="text-outline-variant">→</span>
+        <span class="text-on-surface-variant">Review &amp; release</span>
+    </div>
+
     <div class="flex items-center gap-2 mb-2">
         <span class="text-success">✅</span>
         <span class="text-[11px] font-semibold text-success uppercase tracking-wide bg-success-container px-2 py-0.5 rounded">Trend Bet Approved</span>
     </div>
-    <h1 class="text-3xl font-semibold mb-1">Sourcing Handoff</h1>
-    <p class="text-sm text-on-surface-variant mb-4">Automated vendor matching and PO generation.</p>
+    <h1 class="text-3xl font-semibold mb-1">Purchase Order</h1>
+    <p class="text-sm text-on-surface-variant mb-4">The system matched your approved bet to a vendor and generated this order. Review and release to send it to the supplier.</p>
     <span class="inline-block bg-surface-container px-3 py-1 rounded text-xs font-mono border border-outline-variant">REF: TB-2024-089A</span>
 
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mt-6">
         <!-- Brief -->
         <div class="md:col-span-8 bg-surface-container-lowest border border-outline-variant rounded p-5">
-            <h2 class="text-base font-semibold mb-4 flex items-center gap-2">📄 Sourcing Brief</h2>
+            <h2 class="text-base font-semibold mb-1 flex items-center gap-2">📄 Order Summary</h2>
+            <p class="text-xs text-on-surface-variant mb-4">Auto-populated from your briefing bet commitment.</p>
             <div class="grid grid-cols-3 gap-3 mb-4">
                 <div class="bg-surface p-3 border border-outline-variant rounded text-center">
-                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">Allocation</div>
+                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">Allocation Type</div>
                     <div class="text-lg font-bold font-mono">Core Commitment</div>
                 </div>
                 <div class="bg-surface p-3 border border-outline-variant rounded text-center">
-                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">OTB</div>
+                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">Total Value</div>
                     <div class="text-lg font-bold font-mono">₹450,000</div>
                 </div>
                 <div class="bg-surface p-3 border border-outline-variant rounded text-center">
-                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">Landed Cost</div>
+                    <div class="text-[10px] text-on-surface-variant uppercase mb-1">Cost Per Unit</div>
                     <div class="text-lg font-bold font-mono">₹18.50 <span class="text-xs text-on-surface-variant">/unit</span></div>
                 </div>
             </div>
-            <div class="text-xs font-semibold mb-2">Material Requirements</div>
+            <div class="text-xs font-semibold mb-2">Materials &amp; Specs</div>
             <div class="flex flex-wrap gap-2">
                 <span class="px-3 py-1 text-xs bg-surface-container border border-outline-variant rounded">100% European Flax Linen</span>
                 <span class="px-3 py-1 text-xs bg-surface-container border border-outline-variant rounded">160 GSM weight</span>
                 <span class="px-3 py-1 text-xs bg-surface-container border border-outline-variant rounded">Garment Washed finish</span>
+                <span class="px-3 py-1 text-xs bg-surface-container border border-outline-variant rounded">24,300 units</span>
             </div>
         </div>
 
         <!-- Vendor -->
         <div class="md:col-span-4 bg-surface-container-lowest border border-outline-variant rounded p-5">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-base font-semibold">🤝 Vendor Match</h2>
-                <span class="bg-success text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">SYSTEM SUGGESTION</span>
+            <div class="flex justify-between items-center mb-1">
+                <h2 class="text-base font-semibold">🤝 Supplier</h2>
+                <span class="bg-success text-white px-2 py-0.5 rounded text-[10px] font-bold tracking-wide">AUTO-MATCHED</span>
             </div>
+            <p class="text-xs text-on-surface-variant mb-3">Best-fit vendor based on capacity, lead time, and past quality.</p>
             <div class="border-2 border-primary rounded p-4">
                 <div class="flex justify-between items-start mb-3">
                     <div>
@@ -51,8 +64,8 @@
                 </div>
                 <div class="border-t border-outline-variant pt-3 grid grid-cols-2 gap-2">
                     <div>
-                        <div class="text-[10px] text-on-surface-variant uppercase">Lead Time</div>
-                        <div class="font-semibold text-sm">45 Days <span class="text-success text-[10px]">▼ 5d avg</span></div>
+                        <div class="text-[10px] text-on-surface-variant uppercase">Est. Lead Time</div>
+                        <div class="font-semibold text-sm">45 Days <span class="text-success text-[10px]">▼ 5d faster than avg</span></div>
                     </div>
                     <div>
                         <div class="text-[10px] text-on-surface-variant uppercase">Capacity Score</div>
@@ -61,18 +74,19 @@
                     </div>
                 </div>
             </div>
-            <button class="w-full text-center text-primary text-xs font-semibold mt-3 py-2 border border-outline-variant rounded hover:bg-surface-container transition-colors">View Alternate Vendors (2)</button>
+            <button class="w-full text-center text-primary text-xs font-semibold mt-3 py-2 border border-outline-variant rounded hover:bg-surface-container transition-colors">View 2 alternate suppliers →</button>
         </div>
     </div>
 
     <!-- Timeline -->
     <div class="bg-surface-container-lowest border border-outline-variant rounded p-5 mt-4 overflow-x-auto">
-        <h2 class="text-base font-semibold mb-4">⏱️ Procurement Timeline</h2>
+        <h2 class="text-base font-semibold mb-1">⏱️ Delivery Timeline</h2>
+        <p class="text-xs text-on-surface-variant mb-3">Estimated milestones after the PO is sent to the supplier.</p>
         <div class="flex justify-between min-w-[600px] relative pt-2">
             <div class="absolute top-6 left-[5%] right-[5%] h-0.5 bg-outline-variant z-0"></div>
             {% for step in [
-                ('📄', 'PO Issuance', 'Today', True),
-                ('🏭', 'Fabric Booking', '+5 Days', False),
+                ('📄', 'PO Sent', 'Today', True),
+                ('🏭', 'Fabric Booked', '+5 Days', False),
                 ('✂️', 'Cut & Sew', '+20 Days', False),
                 ('🚢', 'In Transit', '+35 Days', False),
                 ('🏗️', 'Warehouse', '+45 Days', False)
@@ -88,34 +102,71 @@
 </div>
 
 <!-- Footer -->
-<div class="fixed bottom-0 left-0 md:left-56 right-0 h-20 bg-surface border-t border-outline-variant z-40 px-6 flex items-center" style="box-shadow:0 -4px 4px rgba(0,0,0,0.05)">
-    <div class="max-w-6xl mx-auto w-full flex justify-between items-center">
-        <div class="flex items-center gap-3">
-            <div class="w-1 h-10 bg-success rounded-full"></div>
+<div class="fixed bottom-0 left-0 md:left-56 right-0 h-24 bg-surface border-t border-outline-variant z-40 px-6 flex items-center" style="box-shadow:0 -4px 4px rgba(0,0,0,0.05)">
+    <div class="max-w-6xl mx-auto w-full">
+        <div class="flex justify-between items-center">
             <div>
-                <div class="text-xs font-semibold uppercase tracking-wide">Automated PO Ready</div>
-                <div class="text-[11px] text-on-surface-variant">Vardhman Textiles Ltd. · 24,300 Units</div>
+                <div class="text-xs font-semibold">Ready to send to supplier</div>
+                <div class="text-[11px] text-on-surface-variant">Vardhman Textiles Ltd. · 24,300 units · ₹18.50/unit · 45 day lead time</div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="showModify()" class="px-4 py-2 border border-outline text-on-surface text-xs font-semibold rounded hover:bg-surface-container transition-colors">
+                    Edit Order Details
+                </button>
+                <button onclick="releasePO()" class="px-5 py-2 bg-primary text-on-primary text-xs font-semibold rounded hover:opacity-90 transition-colors flex items-center gap-1">
+                    Send to Supplier
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
             </div>
         </div>
-        <div class="flex gap-2">
-            <button class="px-4 py-2 border border-outline text-on-surface text-xs font-semibold rounded hover:bg-surface-container transition-colors uppercase">Modify Specs</button>
-            <button onclick="releasePO()" class="px-5 py-2 bg-primary text-on-primary text-xs font-semibold rounded hover:opacity-90 transition-colors flex items-center gap-1 uppercase">Release PO <span class="text-sm">🚀</span></button>
+        <p class="text-[10px] text-on-surface-variant mt-1">This will email the PO to Vardhman Textiles Ltd. and start the 45-day procurement timeline.</p>
+    </div>
+</div>
+
+<!-- Modify Specs Modal -->
+<div id="modify-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
+    <div class="absolute inset-0" style="backdrop-filter:blur(8px);background:rgba(25,27,36,0.4)" onclick="hideModify()"></div>
+    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md border border-outline-variant p-6">
+        <h3 class="text-lg font-semibold mb-1">Edit Order Details</h3>
+        <p class="text-sm text-on-surface-variant mb-4">Adjust quantities, materials, or switch suppliers before releasing.</p>
+        <div class="space-y-3 mb-4">
+            <div>
+                <label class="text-xs font-semibold">Units</label>
+                <input type="number" value="24300" class="w-full border border-outline-variant rounded p-2 text-sm bg-surface"/>
+            </div>
+            <div>
+                <label class="text-xs font-semibold">Supplier</label>
+                <select class="w-full border border-outline-variant rounded p-2 text-sm bg-surface">
+                    <option>Vardhman Textiles Ltd. (92/100, 45d)</option>
+                    <option>FabricFolio Exports (78/100, 35d)</option>
+                    <option>LuxTex India (85/100, 55d)</option>
+                </select>
+            </div>
+            <div>
+                <label class="text-xs font-semibold">Notes for supplier</label>
+                <input type="text" placeholder="e.g., Prioritize 160 GSM batch" class="w-full border border-outline-variant rounded p-2 text-sm bg-surface"/>
+            </div>
+        </div>
+        <div class="flex justify-end gap-2">
+            <button onclick="hideModify()" class="px-4 py-2 text-sm text-on-surface-variant rounded hover:bg-surface-container">Cancel</button>
+            <button onclick="hideModify()" class="px-4 py-2 text-sm bg-primary text-white rounded hover:opacity-90">Save Changes</button>
         </div>
     </div>
 </div>
 
-<!-- PO Confirmation Toast -->
-<div id="po-confirm" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#faf8ff;border:2px solid #006e1c;border-radius:8px;padding:24px 32px;z-index:200;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-    <div style="font-size:48px;margin-bottom:8px;">✅</div>
-    <div class="text-lg font-bold mb-1">PO Released</div>
-    <div class="text-xs font-mono text-on-surface-variant mb-3">#PO-2024-089A · Vardhman Textiles Ltd.</div>
-    <div class="text-sm text-on-surface">24,300 Units · ₹18.50/unit · ETA 45 Days</div>
-    <button onclick="document.getElementById('po-confirm').style.display='none'" class="mt-4 px-4 py-2 bg-primary text-white text-xs font-semibold rounded hover:opacity-90">Close</button>
+<!-- PO Confirmation -->
+<div id="po-confirm" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#faf8ff;border:2px solid #006e1c;border-radius:8px;padding:32px 40px;z-index:200;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div style="font-size:48px;margin-bottom:8px;">📤</div>
+    <div class="text-lg font-bold mb-1">Purchase Order Sent</div>
+    <div class="text-xs font-mono text-on-surface-variant mb-3">#PO-2024-089A</div>
+    <div class="text-sm text-on-surface mb-3">Vardhman Textiles Ltd.<br/>24,300 units · ₹18.50/unit</div>
+    <div class="text-xs text-on-surface-variant mb-4">Estimated delivery: 45 days<br/>Confirmation emailed to supplier</div>
+    <button onclick="document.getElementById('po-confirm').style.display='none'" class="px-4 py-2 bg-primary text-white text-xs font-semibold rounded hover:opacity-90">Done</button>
 </div>
 
 <script>
-function releasePO() {
-    document.getElementById('po-confirm').style.display = 'block';
-}
+function releasePO() { document.getElementById('po-confirm').style.display = 'block'; }
+function showModify() { document.getElementById('modify-modal').classList.add('dd-open'); }
+function hideModify() { document.getElementById('modify-modal').classList.remove('dd-open'); }
 </script>
 {% endblock %}
