@@ -1,64 +1,64 @@
 {% extends "base.html" %}
-{% block title %}Triage — Disagreement Engine{% endblock %}
+{% block title %}Decision Board — Disagreement Engine{% endblock %}
 {% block content %}
 <div class="max-w-5xl mx-auto px-6 py-8">
     <div class="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
         <div>
-            <h1 class="text-3xl font-semibold text-on-surface mb-1">Triage Inbox</h1>
-            <p class="text-sm text-on-surface-variant">Conflict-first trend analysis. Sources disagree → you decide.</p>
+            <h1 class="text-3xl font-semibold text-on-surface mb-1">Decision Board</h1>
+            <p class="text-sm text-on-surface-variant">Conflicts surfaced from 3 contrasting sources. Prioritized by disagreement severity — biggest gaps need decisions first.</p>
         </div>
         <div class="text-xs text-on-surface-variant">Sort by:
             <select id="sort-select" class="border border-outline-variant rounded px-2 py-1 bg-surface text-sm" onchange="sortCards()">
-                <option value="urgency">Action Urgency</option>
+                <option value="urgency">Conflict Severity</option>
                 <option value="margin">Margin Risk</option>
                 <option value="name">Name A-Z</option>
             </select>
         </div>
     </div>
 
-    <!-- Action Required -->
+    <!-- Action Needed Now -->
     <section class="mb-8">
         <div class="flex items-center gap-2 mb-4">
             <span class="material-symbols-outlined filled text-error text-lg">warning</span>
-            <h2 class="text-lg font-medium">Action Required Today</h2>
-            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ critical|length }}</span>
+            <h2 class="text-lg font-medium">Action Needed</h2>
+            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ action_items|length }}</span>
         </div>
         <div class="space-y-2">
-            {% for t in critical %}
+            {% for t in action_items %}
             <a href="/briefing/{{ t.id }}" class="block bg-surface-container-lowest border border-outline-variant rounded p-4 hover:border-primary transition-colors relative overflow-hidden group no-underline">
                 <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
                 <div class="pl-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
                     <div>
                         <div class="flex items-center gap-2 mb-1">
-                            <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border border-error">CRITICAL</span>
+                            <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border border-error">HIGH CONFLICT</span>
                             <h3 class="text-lg font-medium text-on-surface">{{ t.name }}</h3>
                         </div>
                         <div class="flex flex-wrap gap-3 text-[13px] text-on-surface-variant">
-                            <span>{% if "₹699" in t.price_band or "₹799" in t.price_band %}Margin Risk: High{% else %}Stockout: Pending{% endif %}</span>
+                            <span>Sources disagree: {% if t.id == 'chanderi-straight' %}Premium demand vs mass-market absence{% else %}Strong demand vs narrow window{% endif %}</span>
                             <span class="text-outline-variant">|</span>
-                            <span class="font-mono text-xs">{{ t.signal_summary[:60] }}</span>
+                            <span class="font-mono text-xs">{{ t.price_band }} · {{ t.season }}</span>
                         </div>
                     </div>
-                    <span class="text-primary text-sm font-semibold whitespace-nowrap group-hover:underline">Briefing →</span>
+                    <span class="text-primary text-sm font-semibold whitespace-nowrap group-hover:underline">Analyze →</span>
                 </div>
             </a>
             {% endfor %}
         </div>
     </section>
 
-    <!-- On the Radar -->
-    <section>
+    <!-- Watching -->
+    <section class="mb-8">
         <div class="flex items-center gap-2 mb-4">
             <span class="material-symbols-outlined filled text-tertiary-container text-lg">schedule</span>
-            <h2 class="text-lg font-medium">On the Radar</h2>
-            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ others|length }}</span>
+            <h2 class="text-lg font-medium">Watching</h2>
+            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ watching|length }}</span>
         </div>
         <div class="space-y-2">
-            {% for t in others %}
-            {% set border = "#c84000" if t.priority == "emerging" else "#c3c6d8" %}
-            {% set badge_bg = "#ffdbd0" if t.priority == "emerging" else "#ecedfa" %}
-            {% set badge_text = "#390c00" if t.priority == "emerging" else "#424656" %}
-            {% set badge_border = "#9e3100" if t.priority == "emerging" else "#c3c6d8" %}
+            {% for t in watching %}
+            {% set border = "#c84000" if t.priority == "rising" else "#c3c6d8" %}
+            {% set badge_bg = "#ffdbd0" if t.priority == "rising" else "#ecedfa" %}
+            {% set badge_text = "#390c00" if t.priority == "rising" else "#424656" %}
+            {% set badge_border = "#9e3100" if t.priority == "rising" else "#c3c6d8" %}
             <a href="/briefing/{{ t.id }}" class="block bg-surface-container-lowest border border-outline-variant rounded p-4 hover:border-primary transition-colors relative overflow-hidden group no-underline">
                 <div class="absolute left-0 top-0 bottom-0 w-1" style="background:{{ border }}"></div>
                 <div class="pl-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -73,12 +73,33 @@
                             <span class="font-mono text-xs">{{ t.signal_summary[:55] }}</span>
                         </div>
                     </div>
-                    <span class="text-on-surface-variant text-sm font-semibold whitespace-nowrap group-hover:text-primary">Briefing →</span>
+                    <span class="text-on-surface-variant text-sm font-semibold whitespace-nowrap group-hover:text-primary">Analyze →</span>
                 </div>
             </a>
             {% endfor %}
         </div>
     </section>
+
+    <!-- Live Scanned Trends -->
+    {% if scanned_trends %}
+    <section>
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-lg">radar</span>
+            <h2 class="text-lg font-medium">Live Search Trends</h2>
+            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">auto-scanned</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-3">Rising search terms from Google Trends (past 3 months). These may indicate early demand before products appear on marketplaces.</p>
+        <div class="flex flex-wrap gap-2">
+            {% for s in scanned_trends %}
+            <div class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 flex items-center gap-2">
+                <span class="text-xs font-medium">{{ s.term }}</span>
+                <span class="text-success text-[10px] font-semibold">↗ {{ s.momentum }}%</span>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-[10px] text-on-surface-variant mt-2 italic">These are search signals only — they do not guarantee purchase demand. Use as early discovery, not buy signals.</p>
+    </section>
+    {% endif %}
 </div>
 
 <script>
@@ -90,16 +111,16 @@ function sortCards() {
         if (!container) return;
         var cards = Array.from(container.querySelectorAll('a'));
         cards.sort(function(a, b) {
-            var nameA = (a.querySelector('h3').textContent || '').toLowerCase();
-            var nameB = (b.querySelector('h3').textContent || '').toLowerCase();
+            var nameA = (a.querySelector('h3')?.textContent || '').toLowerCase();
+            var nameB = (b.querySelector('h3')?.textContent || '').toLowerCase();
             if (sortVal === 'name') { return nameA.localeCompare(nameB); }
             if (sortVal === 'margin') {
                 var marginA = (a.textContent || '').includes('High') ? 3 : (a.textContent || '').includes('Medium') ? 2 : 1;
                 var marginB = (b.textContent || '').includes('High') ? 3 : (b.textContent || '').includes('Medium') ? 2 : 1;
                 return marginB - marginA;
             }
-            var critA = (a.querySelector('span')?.textContent || '').includes('CRITICAL') ? 0 : 1;
-            var critB = (b.querySelector('span')?.textContent || '').includes('CRITICAL') ? 0 : 1;
+            var critA = (a.querySelector('span')?.textContent || '').includes('HIGH') ? 0 : 1;
+            var critB = (b.querySelector('span')?.textContent || '').includes('HIGH') ? 0 : 1;
             return critA - critB || nameA.localeCompare(nameB);
         });
         cards.forEach(function(card) { container.appendChild(card); });

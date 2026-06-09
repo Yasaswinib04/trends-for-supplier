@@ -23,27 +23,33 @@ init_telemetry()
 with open(DATA_DIR / "cached_trends.json") as f:
     TRENDS = json.load(f)
 
-TRIAGE_MAP = {
-    "chanderi-straight": ("critical", "CRITICAL", "red"),
-    "organza-embroidered": ("critical", "CRITICAL", "red"),
-    "ajrakh-cotton": ("emerging", "EMERGING", "orange"),
-    "ikat-anarkali": ("emerging", "EMERGING", "orange"),
-    "bandhani-straight": ("emerging", "EMERGING", "orange"),
-    "fusion-palazzo": ("monitor", "MONITOR", "gray"),
-    "blockprint-cotton": ("monitor", "MONITOR", "gray"),
-    "linen-chinese-collar": ("monitor", "MONITOR", "gray"),
+DECISION_MAP = {
+    "chanderi-straight": ("action", "ACTION NOW", "red"),
+    "organza-embroidered": ("action", "ACTION NOW", "red"),
+    "ajrakh-cotton": ("rising", "RISING", "orange"),
+    "ikat-anarkali": ("rising", "RISING", "orange"),
+    "bandhani-straight": ("rising", "RISING", "orange"),
+    "fusion-palazzo": ("tracking", "TRACKING", "gray"),
+    "blockprint-cotton": ("tracking", "TRACKING", "gray"),
+    "linen-chinese-collar": ("tracking", "TRACKING", "gray"),
 }
 
 @app.route("/")
-def triage():
+def decision_board():
     trends_with_status = []
     for t in TRENDS:
-        priority, label, color = TRIAGE_MAP.get(t["id"], ("monitor", "MONITOR", "gray"))
+        priority, label, color = DECISION_MAP.get(t["id"], ("tracking", "TRACKING", "gray"))
         trends_with_status.append({**t, "priority": priority, "label": label, "color": color})
 
-    critical = [t for t in trends_with_status if t["priority"] == "critical"]
-    others = [t for t in trends_with_status if t["priority"] != "critical"]
-    return render_template("triage.html", critical=critical, others=others, trends=TRENDS)
+    action_items = [t for t in trends_with_status if t["priority"] == "action"]
+    watching = [t for t in trends_with_status if t["priority"] != "action"]
+
+    # Try to surface live search trends as supplement
+    scanned = _scan_live_trends()
+
+    return render_template("decision_board.html",
+        action_items=action_items, watching=watching,
+        scanned_trends=scanned, trends=TRENDS)
 
 @app.route("/briefing/<trend_id>")
 def briefing(trend_id):
@@ -57,11 +63,42 @@ def briefing(trend_id):
     reviews = get_review_signals(trend_id)
     synth = synthesize(trend, nykaa, myntra, meesho)
 
-    prio, label, color = TRIAGE_MAP.get(trend_id, ("monitor", "MONITOR", "gray"))
+    prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
 
     return render_template("briefing.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
         reviews=reviews, synth=synth, prio=prio, label=label, color=color)
+
+
+def _scan_live_trends():
+    try:
+        from sources.google_trends import load_cache
+        cache = load_cache()
+        scanned = []
+
+        for cache_key, data in cache.items():
+            interest = data.get("interest_data", {})
+            for term, term_data in interest.items():
+                direction = term_data.get("direction", "stable")
+                if direction == "rising" and "kurti" in term.lower():
+                    current = term_data.get("current", 0)
+                    peak = term_data.get("peak", 1)
+                    momentum = min(99, int(current / max(peak, 1) * 100))
+                    scanned.append({
+                        "term": term, "direction": direction,
+                        "momentum": momentum, "current": current
+                    })
+
+        scanned.sort(key=lambda s: -s["momentum"])
+        seen = set()
+        unique = []
+        for s in scanned:
+            if s["term"] not in seen:
+                unique.append(s)
+                seen.add(s["term"])
+        return unique[:8]
+    except Exception:
+        return []
 
 @app.route("/market-view")
 def market_view():
