@@ -107,7 +107,6 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
             status.update(label="Synthesizing evidence with AI...", state="running")
             synthesis = synthesize(trend, trends_data, meta_data, marketplace_data,
                                    review_data, meesho_data, nykaa_data)
-            bet = compute_bet_size(trend, synthesis)
             status.update(label="Analysis complete", state="complete")
 
     # -------- Results Display --------
@@ -120,6 +119,41 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
         st.caption(f"⚠️ {synthesis['_note']}")
     if synthesis.get("_deepseek_error"):
         st.caption(f"⚠️ AI synthesis unavailable: {synthesis['_deepseek_error']}")
+
+    st.markdown("---")
+
+    # Source quality at a glance
+    gt_momentum = trends_data.get("momentum_score", 0)
+    gt_live = trends_data.get("live", False)
+    meta_competitors = len(meta_data.get("competitors_backing_this_trend", []))
+    meta_max_days = max((c.get("ad_running_days", 0) for c in meta_data.get("competitors_backing_this_trend", [])), default=0)
+    ms_units = meesho_data.get("total_units_sold", 0)
+    ms_resellers = meesho_data.get("total_resellers", 0)
+    ms_growth = any(p.get("is_accelerating") for p in meesho_data.get("products_found", []))
+    nk_full_price = nykaa_data.get("full_price_products", 0)
+    nk_editorial = nykaa_data.get("editorial_featured_count", 0)
+    rv_count = review_data.get("total_analyzed", 0)
+    rv_sentiment = review_data.get("sentiment", {}).get("positive", 0)
+
+    source_quality_cols = st.columns(6)
+    quality_items = [
+        ("📈 Trends", f"Momentum: {gt_momentum:.0%}", "green" if gt_momentum > 0.15 else "orange" if gt_momentum > 0 else "grey"),
+        ("📢 Ads", f"{meta_competitors} competitors, max {meta_max_days}d", "green" if meta_max_days >= 21 else "orange"),
+        ("🛒 Mktplc", f"{marketplace_data.get('marketplace_presence', '?')} presence", "green" if marketplace_data.get('marketplace_presence') == 'strong' else "orange"),
+        ("📦 Meesho", f"{ms_units:,}u, {ms_resellers} sellers{' ↗' if ms_growth else ''}", "green" if ms_units > 5000 else "orange" if ms_units > 1000 else "grey"),
+        ("✨ Nykaa", f"{nk_full_price} full-price, {nk_editorial} editorial", "green" if nk_full_price >= 2 else "orange" if nk_full_price >= 1 else "grey"),
+        ("💬 Reviews", f"{rv_count} reviews, {rv_sentiment:.0%} positive", "green" if rv_sentiment > 0.7 else "orange" if rv_sentiment > 0.5 else "grey"),
+    ]
+    for i, (label, value, color) in enumerate(quality_items):
+        with source_quality_cols[i]:
+            border = "1px solid #d1d5db" if color == "grey" else "1px solid #16a34a" if color == "green" else "1px solid #d97706"
+            st.markdown(
+                f"<div style='font-size:0.65rem;padding:6px;border-radius:4px;border:{border};text-align:center;'>"
+                f"<div style='font-weight:600;margin-bottom:2px;'>{label}</div>"
+                f"<div style='color:#374151;'>{value}</div></div>",
+                unsafe_allow_html=True
+            )
+    st.caption("Quality indicators per source. Green = strong signal. Orange = moderate. Grey = weak/absent.")
 
     st.markdown("---")
 
@@ -160,23 +194,66 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
     st.markdown("---")
     st.subheader("💰 Bet Sizing Recommendation")
 
+    # Trust weight sliders (collapsible)
+    source_weights = {}
+    with st.expander("⚖️ Adjust source trust (how much do you believe each source?)", expanded=False):
+        st.caption("Default: all sources weighted equally. Increase weight for sources you trust more, decrease for ones you think may mislead. The score updates automatically.")
+        tw_col1, tw_col2 = st.columns(2)
+        default_sources = [
+            "Google Trends", "Competitor Ads (Meta)", "Myntra/Ajio",
+            "Meesho (Price-sensitive)", "Nykaa Fashion (Premium)", "Customer Reviews"
+        ]
+        for i, src in enumerate(default_sources):
+            with tw_col1 if i < 3 else tw_col2:
+                source_weights[src] = st.slider(
+                    src, 0.0, 2.0, 1.0, 0.1,
+                    key=f"weight_{i}",
+                    help="1.0 = default. >1 = trust more. <1 = trust less. 0 = ignore this source."
+                )
+
+    use_custom = any(abs(w - 1.0) > 0.05 for w in source_weights.values())
+    if use_custom:
+        bet = compute_bet_size(trend, synthesis, source_weights)
+    else:
+        bet = compute_bet_size(trend, synthesis)
+
+    sizing = bet["sizing"]
+    score = bet["score"]
+
     bet_col1, bet_col2 = st.columns([1, 2])
 
     with bet_col1:
-        sizing = bet["sizing"]
         if sizing == "DEEP BUY":
             st.success(f"## {sizing}")
         elif sizing == "MODERATE BUY":
             st.info(f"## {sizing}")
         elif sizing == "TRIAL":
             st.warning(f"## {sizing}")
+        elif sizing == "NEAR TRIAL":
+            st.warning(f"## {sizing}")
         else:
             st.error(f"## {sizing}")
 
-        st.metric("Confidence Score", f"{bet['score']}/{bet['max_score']}")
+        st.metric("Confidence Score", f"{score}/{bet['max_score']}")
+
+        # Visual gauge
+        gauge_html = f"""
+        <div style="background:#e5e7eb;border-radius:4px;height:8px;margin:8px 0;position:relative;">
+          <div style="background:{'#16a34a' if score >= 7.5 else '#2563eb' if score >= 5 else '#ca8a04' if score >= 3 else '#d97706' if score >= 2 else '#dc2626'};border-radius:4px;height:8px;width:{score * 10}%;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#6b7280;margin-top:2px;">
+          <span>0 WAIT</span><span>2 NEAR</span><span>3 TRIAL</span><span>5 MOD</span><span>7.5 DEEP</span><span>10</span>
+        </div>
+        """
+        st.markdown(gauge_html, unsafe_allow_html=True)
+
+        if bet.get("threshold_next"):
+            st.caption(f"📏 {bet['threshold_next']}")
         st.caption(f"Price band: {bet['price_band']}")
         st.caption(f"Season: {bet['season']}")
         st.caption(f"Risk level: {bet['risk_level']}")
+        if bet.get("source_weights_used"):
+            st.caption("⚖️ Custom source weights applied")
 
     with bet_col2:
         with st.container(border=True):
@@ -191,6 +268,9 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
         comps = bet["components"]
         st.write(f"- Convergence score: {comps['convergence_score']} (from {comps['strong_for_count']} strong + {comps['moderate_for_count']} moderate sources for, {comps['strong_against_count']} strong + {comps['moderate_against_count']} moderate sources against)")
         st.write(f"- Disagreement penalty: -{comps['disagreement_penalty']} (from {comps['disagreement_count']} source conflicts)")
+        st.write(f"- **Thresholds are set by judgment, not backtested data.** They will improve as sell-through outcomes feed back in.")
+        if bet.get("source_weights_used"):
+            st.write(f"- Custom source weights applied (see trust sliders above)")
 
     # What to watch
     st.markdown("---")

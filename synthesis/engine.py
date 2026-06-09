@@ -393,10 +393,13 @@ def _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
     }
 
 
-def compute_bet_size(trend, synthesis):
+def compute_bet_size(trend, synthesis, source_weights=None):
     evidence_for = synthesis.get("for", [])
     evidence_against = synthesis.get("against", [])
     disagreements = synthesis.get("disagreements", [])
+
+    if source_weights is None:
+        source_weights = {}
 
     strong_for = sum(1 for e in evidence_for if e["strength"] == "strong")
     moderate_for = sum(1 for e in evidence_for if e["strength"] == "moderate")
@@ -407,6 +410,26 @@ def compute_bet_size(trend, synthesis):
                         - strong_against * 2.5 - moderate_against * 0.75)
     convergence_score = max(0, min(10, convergence_score))
 
+    if source_weights:
+        total_weight = sum(source_weights.values())
+        if total_weight > 0:
+            weighted_score = 0
+            for evidence in evidence_for:
+                src = evidence["source"]
+                w = source_weights.get(src, 1.0)
+                if evidence["strength"] == "strong":
+                    weighted_score += 2.5 * w
+                elif evidence["strength"] == "moderate":
+                    weighted_score += 1.5 * w
+            for evidence in evidence_against:
+                src = evidence["source"]
+                w = source_weights.get(src, 1.0)
+                if evidence["strength"] == "strong":
+                    weighted_score -= 2.5 * w
+                elif evidence["strength"] == "moderate":
+                    weighted_score -= 0.75 * w
+            convergence_score = max(0, min(10, weighted_score))
+
     disagreement_penalty = len(disagreements) * 1.5
 
     total = convergence_score - disagreement_penalty
@@ -414,6 +437,7 @@ def compute_bet_size(trend, synthesis):
 
     if total >= 7.5:
         sizing = "DEEP BUY"
+        sizing_zone = "commit"
         rationale = (
             f"Exceptional convergence across 6 sources ({strong_for} strong, {moderate_for} moderate). "
             "Independent signals agree. Recommend committing 60-70% of planned open-to-buy."
@@ -422,6 +446,7 @@ def compute_bet_size(trend, synthesis):
         risk_level = "Low — but monitor discount patterns and return rates."
     elif total >= 5:
         sizing = "MODERATE BUY"
+        sizing_zone = "commit"
         rationale = (
             f"Good convergence ({strong_for} strong sources, {moderate_for} moderate) "
             "with manageable disagreement. Evidence supports meaningful inventory with hedging."
@@ -430,33 +455,58 @@ def compute_bet_size(trend, synthesis):
         risk_level = "Moderate — hedge with re-orderable fabric and monitor sell-through weekly."
     elif total >= 3:
         sizing = "TRIAL"
+        sizing_zone = "test"
         rationale = (
             f"Mixed or early signals ({strong_for + moderate_for} positive sources). "
             "Not enough conviction for deep commitment, but enough to test."
         )
         suggested_action = "Buy 300-500 units. Place in top 15-20 stores. Measure sell-through in 2 weeks. Have re-order fabric on standby."
         risk_level = "High — this is a test, not a commitment. Be willing to walk away."
+    elif total >= 2:
+        sizing = "NEAR TRIAL"
+        sizing_zone = "monitor"
+        rationale = (
+            f"Weak but real signals ({strong_for + moderate_for} positive sources). "
+            "One strong source or a shift in disagreement could push this into TRIAL territory. "
+            "Don't buy yet — but watch closely."
+        )
+        suggested_action = "No buy this cycle. Re-check in 2 weeks. If any source upgrades (new competitor ad, reseller acceleration, search spike), re-run analysis immediately."
+        risk_level = "Wait — close to actionable. One more signal could flip this."
     else:
-        sizing = "MONITOR"
+        sizing = "WAIT"
+        sizing_zone = "monitor"
         rationale = (
             f"Insufficient converging evidence ({strong_for + moderate_for} positive sources). "
-            "Signals are weak, conflicting, or absent. Buying now would be gambling."
+            "Signals are too weak, conflicting, or absent. Buying now would be gambling."
         )
-        suggested_action = "No buy this cycle. Track search trends, competitor ad duration, Meesho reseller growth, and store inquiries for 2-4 weeks."
+        suggested_action = "No buy this cycle. Track search trends, competitor ad duration, Meesho reseller growth, and store inquiries for 2-4 weeks. Significant new evidence needed to reconsider."
         risk_level = "Avoid — cost of waiting is low. Cost of being wrong is high."
+
+    threshold_next = None
+    if sizing == "WAIT":
+        threshold_next = f"Need {2.0 - total:.1f} more points to reach NEAR TRIAL"
+    elif sizing == "NEAR TRIAL":
+        threshold_next = f"Need {3.0 - total:.1f} more points to reach TRIAL"
+    elif sizing == "TRIAL":
+        threshold_next = f"Need {5.0 - total:.1f} more points to reach MODERATE BUY"
+    elif sizing == "MODERATE BUY":
+        threshold_next = f"Need {7.5 - total:.1f} more points to reach DEEP BUY"
 
     price_band = trend.get("price_band", "₹499-799")
     season = trend.get("season", "Unknown")
 
     return {
         "sizing": sizing,
+        "sizing_zone": sizing_zone,
         "score": round(total, 1),
         "max_score": 10,
         "rationale": rationale,
         "suggested_action": suggested_action,
         "risk_level": risk_level,
+        "threshold_next": threshold_next,
         "price_band": price_band,
         "season": season,
+        "source_weights_used": bool(source_weights),
         "components": {
             "convergence_score": round(convergence_score, 1),
             "disagreement_penalty": round(disagreement_penalty, 1),
