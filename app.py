@@ -3,6 +3,13 @@ import json
 import sys
 from pathlib import Path
 
+# Load .env file before anything else
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 sys.path.insert(0, str(Path(__file__).parent))
 
 from sources.google_trends import fetch_google_trends

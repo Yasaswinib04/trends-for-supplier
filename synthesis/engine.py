@@ -3,6 +3,14 @@ import os
 import re
 from openai import OpenAI
 from pathlib import Path
+
+try:
+    from dotenv import load_dotenv
+    _env_path = Path(__file__).parent.parent / ".env"
+    load_dotenv(_env_path)
+except ImportError:
+    pass
+
 from .prompts import SYNTHESIS_SYSTEM_PROMPT, DEEPSEEK_MODEL, DEEPSEEK_BASE_URL
 
 DATA_DIR = Path(__file__).parent.parent / "data"
