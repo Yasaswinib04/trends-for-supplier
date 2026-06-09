@@ -1,0 +1,81 @@
+{
+  "cases": [
+    {
+      "id": "discount_trap",
+      "name": "The Discount Trap",
+      "description": "High Myntra volume but at 60%+ discount. Meesho moderate. Nykaa absent.",
+      "expected_trap": "discount_distortion",
+      "assertions": [
+        "conflicts array must not be empty",
+        "at least one HIGH severity conflict",
+        "at least one conflict mentions 'discount' or 'price-driven' or 'distortion'",
+        "bet_lean is not STRONG BUY"
+      ],
+      "trend": {"name": "Discount Trap Kurti", "id": "null"},
+      "nykaa": {"products_found": [], "nykaa_presence": "absent", "full_price_products": 0},
+      "myntra": {"products_found": [{"name": "Deep Discount Kurti", "rank": 3, "discount": "65%", "reviews": 2500, "avg_rating": 3.2, "review_velocity": 180}], "marketplace_presence": "strong", "discount_distortion_risk": "high"},
+      "meesho": {"products_found": [{"name": "Budget Kurti", "price": 299, "units_sold": "8000+", "rating": 3.6, "reseller_count": 120}], "meesho_presence": "strong", "total_units_sold": 8000, "total_resellers": 120, "reseller_growth_accelerating": false}
+    },
+    {
+      "id": "premium_mirage",
+      "name": "The Premium Mirage",
+      "description": "Nykaa shows strong premium demand (₹1,800+, 0% discount). Meesho shows zero presence. Myntra moderate.",
+      "expected_trap": "aspirational_only",
+      "assertions": [
+        "conflicts array must not be empty",
+        "at least one HIGH severity conflict",
+        "at least one conflict mentions 'premium' or 'aspirational' or 'mass market' or 'absent'",
+        "bet_lean is not STRONG BUY"
+      ],
+      "trend": {"name": "Premium Mirage Kurti", "id": "null"},
+      "nykaa": {"products_found": [{"name": "Luxury Silk Kurti", "brand": "Suta", "price": 1850, "discount": "0%", "rating": 4.6, "review_count": 210}], "nykaa_presence": "strong", "full_price_products": 3, "avg_price": 1850},
+      "myntra": {"products_found": [{"name": "Silk Kurti", "rank": 25, "discount": "15%", "reviews": 180, "avg_rating": 4.1, "review_velocity": 22}], "marketplace_presence": "moderate", "discount_distortion_risk": "low"},
+      "meesho": {"products_found": [], "meesho_presence": "absent", "total_units_sold": 0, "total_resellers": 0, "reseller_growth_accelerating": false}
+    },
+    {
+      "id": "mass_only",
+      "name": "Mass Only, No Premium Signal",
+      "description": "Meesho shows 50K+ units. Myntra moderate. Nykaa completely absent.",
+      "expected_trap": "mass_commodity",
+      "assertions": [
+        "conflicts array must not be empty",
+        "at least one conflict mentions 'commodity' or 'mass' or 'premium absent' or 'value-fashion'",
+        "bet_lean is not STRONG BUY"
+      ],
+      "trend": {"name": "Mass Commodity Kurti", "id": "null"},
+      "nykaa": {"products_found": [], "nykaa_presence": "absent", "full_price_products": 0},
+      "myntra": {"products_found": [{"name": "Basic Cotton Kurti", "rank": 15, "discount": "35%", "reviews": 900, "avg_rating": 3.5, "review_velocity": 55}], "marketplace_presence": "moderate", "discount_distortion_risk": "high"},
+      "meesho": {"products_found": [{"name": "Cotton Kurti", "price": 199, "units_sold": "52000+", "rating": 3.4, "reseller_count": 680}], "meesho_presence": "strong", "total_units_sold": 52000, "total_resellers": 680, "reseller_growth_accelerating": true}
+    },
+    {
+      "id": "perfect_convergence",
+      "name": "The Golden Convergence",
+      "description": "All 3 sources show strong, clean signals. Nykaa zero discount. Myntra top rank, low discount. Meesho high volume + growing resellers.",
+      "expected_trap": "none",
+      "assertions": [
+        "convergences array must not be empty",
+        "bet_lean should be STRONG BUY or CAUTIOUS BUY",
+        "conflicts should be minimal (0 or LOW only)"
+      ],
+      "trend": {"name": "Golden Kurti", "id": "null"},
+      "nykaa": {"products_found": [{"name": "Premium Ethnic Kurti", "brand": "Suta", "price": 1450, "discount": "5%", "rating": 4.5, "review_count": 280}], "nykaa_presence": "strong", "full_price_products": 2, "avg_price": 1450},
+      "myntra": {"products_found": [{"name": "Trending Kurti", "rank": 2, "discount": "10%", "reviews": 3200, "avg_rating": 4.4, "review_velocity": 210}], "marketplace_presence": "strong", "discount_distortion_risk": "low"},
+      "meesho": {"products_found": [{"name": "Popular Kurti", "price": 349, "units_sold": "28000+", "rating": 4.1, "reseller_count": 450}], "meesho_presence": "strong", "total_units_sold": 28000, "total_resellers": 450, "reseller_growth_accelerating": true}
+    },
+    {
+      "id": "silent_meesho",
+      "name": "The Silent Meesho",
+      "description": "Nykaa and Myntra show strong but Meesho shows zero data. Trend might be too niche for mass market.",
+      "expected_trap": "mass_gap",
+      "assertions": [
+        "conflicts array must not be empty",
+        "at least one conflict mentions 'meesho' or 'mass market'",
+        "bet_lean is not STRONG BUY"
+      ],
+      "trend": {"name": "Niche Kurti", "id": "null"},
+      "nykaa": {"products_found": [{"name": "Artisan Kurti", "brand": "Karagiri", "price": 2200, "discount": "0%", "rating": 4.8, "review_count": 65}], "nykaa_presence": "strong", "full_price_products": 2, "avg_price": 2200},
+      "myntra": {"products_found": [{"name": "Craft Kurti", "rank": 18, "discount": "20%", "reviews": 120, "avg_rating": 4.5, "review_velocity": 15}], "marketplace_presence": "moderate", "discount_distortion_risk": "medium"},
+      "meesho": {"products_found": [], "meesho_presence": "absent", "total_units_sold": 0, "total_resellers": 0, "reseller_growth_accelerating": false}
+    }
+  ]
+}
