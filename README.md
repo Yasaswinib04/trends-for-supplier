@@ -1,6 +1,6 @@
 # Kurti Trend Judgment Engine
 
-**What**: A decision-support tool that helps value-fashion category buyers evaluate kurti trend bets before committing inventory. Researches across 4 independent sources, surfaces where they agree and disagree, and produces a transparent bet sizing recommendation.
+**What**: A decision-support tool that helps value-fashion category buyers evaluate kurti trend bets before committing inventory. Researches across 6 independent sources, surfaces where they agree and disagree, and produces a transparent bet sizing recommendation.
 
 **Why kurtis**: India-specific category with rich signals (fabric, print, silhouette, occasion), strong seasonality, and a clear competitor set (Biba, Libas, Aurelia, Westside). Narrow scope forces depth.
 
@@ -29,9 +29,11 @@ If no API key is set, the app uses a rule-based fallback synthesis engine with t
 | **Google Trends** | Search momentum for specific fabric/print/silhouette terms. Rising queries = early buyer intent. | Search ≠ purchase. Low sample sizes for niche terms. May miss vernacular/voice searches. Media noise can spike unrelated terms. | Live (pytrends) + cached fallback |
 | **Meta Ad Library** (Competitor ads) | Which competitors are backing which trends with paid budget. Ad duration = conviction. | Competitors may be late, copying each other, or targeting a different customer. Geo-targeting may hide regional variation. | Cached (manually collected from facebook.com/ads/library, with trend_id linkage) |
 | **Marketplace rankings** (Myntra/Ajio) | What's actually selling, review velocity, discount levels. | Discounting and stockouts distort ranks. High rank at 40% off is not full-price demand. | Cached (manually collected from bestseller pages) |
+| **Meesho** (Price-sensitive mass market) | Real demand at ₹199-500 in tier-2/3/4 cities. Reseller growth is a leading indicator — resellers add products BEFORE demand peaks. Regional concentration data. | High discount % is normal on Meesho (56-63% off MRP is platform behavior). Reviews are short and often incentivized. Products churn as resellers relist. | Cached (manually collected from Meesho app) |
+| **Nykaa Fashion** (Premium trickle-down) | Demand validation at ₹800-2,500. Near-zero discount = genuine willingness to pay. Editorial placements signal merchandising conviction. If a trend works at premium, a ₹599 version has proven demand pyramid. | Audience is urban/metro premium — 90% of your customers never shop there. Heavy sale distortion during events. Absence on Nykaa doesn't always mean a trend is weak. | Cached (manually collected from Nykaa Fashion) |
 | **Customer reviews** | Real fit, fabric, and wash-durability feedback. Sentiment quality. | Small samples. Reviewer demographics may not match your customer base. Curated excerpts, not statistically representative. | Cached (manually collected from product pages) |
 
-**Why this mix matters**: No single source is trusted. The recommendation lives in convergence or conflict between them. The system makes its level of uncertainty explicit.
+**Why this mix matters**: No single source is trusted. The recommendation lives in convergence or conflict between them. Meesho covers the mass market that Myntra/Ajio miss. Nykaa validates whether premium interest exists. Together they paint a complete demand pyramid — or expose its gaps. The system makes its level of uncertainty explicit.
 
 ---
 
@@ -46,6 +48,8 @@ app.py (Streamlit UI)
 │   ├── sources/google_trends.py     → pytrends (live) or cache fallback
 │   ├── sources/meta_ads.py          → competitor_snapshot.json (cached)
 │   ├── sources/marketplace.py       → marketplace_data.json (cached)
+│   ├── sources/meesho.py            → meesho_data.json (cached)
+│   ├── sources/nykaa.py             → nykaa_data.json (cached)
 │   ├── sources/reviews.py           → reviews.json (cached)
 │   │
 │   ├── synthesis/engine.py
@@ -53,7 +57,7 @@ app.py (Streamlit UI)
 │   │   └── compute_bet_size() → transparent scoring engine
 │   │
 │   └── UI renders: FOR/AGAINST cards, disagreements, bet sizing,
-│       missing evidence, watch-next triggers, source detail expanders
+│       missing evidence, watch-next triggers, 6 source detail expanders
 │
 └── utils/cache.py → JSON file cache manager
 ```
@@ -91,17 +95,22 @@ The buyer sees the component breakdown (convergence, penalty, source counts) and
 
 ---
 
-## Demo Output (sample)
+## Demo Output (sample with 6 sources)
 
-| Trend | Marketplace | Competitors | Search | Reviews | Verdict | Score |
-|---|---|---|---|---|---|---|
-| Chanderi Silk Straight with Zari | Strong (low discount) | 2 backing | Rising (+42%) | Solid (68%) | **DEEP BUY** | 8.0 |
-| Fusion Kurti with Palazzo | Strong (high discount) | 2 backing | Rising (+35%) | Solid (72%) | **TRIAL** | 4.0 |
-| Block-Print Cotton A-Line | Strong (mixed discount) | 2 backing | Stable | Solid (60%) | **MONITOR** | 1.5 |
-| Ajrakh Print Cotton | Weak (organic) | 1 testing | Rising (+55%) | Strong (83%) | **MODERATE** | 6.5 |
-| Bandhani Print Straight | Moderate | 1 testing (7 days) | Stable | No data | **TRIAL** | 3.0 |
+| Trend | Myntra/Ajio | Meesho | Nykaa | Verdict | Score |
+|---|---|---|---|---|---|
+| Chanderi Silk Straight with Zari | Strong (low discount) | Weak (imitation) | Strong (3 brands, ~0% off) | **DEEP BUY** | 10.0 |
+| Ajrakh Print Cotton | Weak (organic) | Weak (early) | Emerging (5% off) | **DEEP BUY** | 8.8 |
+| Organza Embroidered | Strong (low discount) | Weak | Strong (15% off) | **DEEP BUY** | 10.0 |
+| Bandhani Print Straight | Moderate | Emerging (35% growth) | Emerging (25% off) | **MODERATE** | 6.0 |
+| Ikat Print Anarkali | Strong (high discount) | Emerging (22% growth) | Strong (10% off) | **MODERATE** | 5.2 |
+| Linen Chinese Collar | Moderate | Weak | Emerging (20% off) | **TRIAL** | 4.5 |
+| Fusion Kurti with Palazzo | Strong (high discount) | Strong (28K units) | Absent | **MONITOR** | 2.8 |
+| Block-Print Cotton A-Line | Strong (mixed discount) | Strong (15K units) | Absent | **MONITOR** | 0.2 |
 
-*Scores generated by rule-based fallback. Range: 1.5–8.0 across 8 trends.*
+*Scores generated by rule-based fallback. Range: 0.2–10.0 across 8 trends with 6 sources.*
+
+**Key pattern**: Block-Print and Fusion both show strong Meesho but get downgraded for Myntra discount distortion + premium absence. Ikat and Bandhani upgraded significantly by the combined Meesho + Nykaa signal validating demand at both price extremes.
 
 ---
 
@@ -157,5 +166,7 @@ The buyer sees the component breakdown (convergence, penalty, source counts) and
 - **Google Trends**: Live via pytrends (unofficial API). Cached fallback included.
 - **Meta Ad Library**: Manually collected from facebook.com/ads/library on June 5, 2025. Point-in-time snapshot.
 - **Marketplace data**: Manually collected from Myntra and Ajio bestseller pages on June 5, 2025. Rankings and discounts are time-sensitive.
+- **Meesho data**: Manually collected from Meesho app on June 8, 2025. Reseller counts, units sold, and growth rates are platform-reported and should be treated as directional.
+- **Nykaa Fashion data**: Manually collected from Nykaa Fashion website on June 7, 2025. D2C brand pricing and editorial placements.
 - **Customer reviews**: Curated excerpts from Myntra and Ajio product pages. 12-40 reviews per trend, manually categorized. Not statistically representative.
 - **All cached data is disclosed as such in the UI** with `disclaimer` fields and `last_updated` timestamps.

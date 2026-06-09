@@ -9,6 +9,8 @@ from sources.google_trends import fetch_google_trends
 from sources.meta_ads import get_meta_ad_signals
 from sources.marketplace import get_marketplace_data
 from sources.reviews import get_review_signals
+from sources.meesho import get_meesho_data
+from sources.nykaa import get_nykaa_data
 from synthesis.engine import synthesize, compute_bet_size
 
 st.set_page_config(
@@ -35,7 +37,7 @@ st.caption("Trends surfaced from competitor activity, search momentum, and marke
 # Animated scan indicator
 scan_placeholder = st.empty()
 with scan_placeholder.container():
-    st.info("📡 Scanned 4 sources · 8 trends surfaced · Last updated just now")
+    st.info("📡 Scanned 6 sources · 8 trends surfaced · Last updated just now")
 
 cols = st.columns(4)
 selected_idx = None
@@ -76,7 +78,7 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
 
     # -------- PHASE 2: Run Analysis --------
     with st.spinner("🔍 Researching across sources..."):
-        with st.status("Pulling signals from 4 sources...", expanded=True) as status:
+        with st.status("Pulling signals from 6 sources...", expanded=True) as status:
             st.write("📈 Google Trends...")
             trends_data = fetch_google_trends(trend.get("search_terms", []), use_cache=True)
 
@@ -86,11 +88,18 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
             st.write("🛒 Marketplace rankings (Myntra/Ajio)...")
             marketplace_data = get_marketplace_data(trend["id"])
 
+            st.write("📦 Meesho (price-sensitive, tier-2/3/4)...")
+            meesho_data = get_meesho_data(trend["id"])
+
+            st.write("✨ Nykaa Fashion (premium trickle-down)...")
+            nykaa_data = get_nykaa_data(trend["id"])
+
             st.write("💬 Customer review signals...")
             review_data = get_review_signals(trend["id"])
 
             status.update(label="Synthesizing evidence with AI...", state="running")
-            synthesis = synthesize(trend, trends_data, meta_data, marketplace_data, review_data)
+            synthesis = synthesize(trend, trends_data, meta_data, marketplace_data,
+                                   review_data, meesho_data, nykaa_data)
             bet = compute_bet_size(trend, synthesis)
             status.update(label="Analysis complete", state="complete")
 
@@ -173,7 +182,7 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
     # Scoring breakdown (collapsible)
     with st.expander("📐 See scoring breakdown", expanded=False):
         comps = bet["components"]
-        st.write(f"- Convergence score: {comps['convergence_score']} (from {comps['strong_for_count']} strong + {comps['moderate_for_count']} moderate sources for, {comps['strong_against_count']} strong sources against)")
+        st.write(f"- Convergence score: {comps['convergence_score']} (from {comps['strong_for_count']} strong + {comps['moderate_for_count']} moderate sources for, {comps['strong_against_count']} strong + {comps['moderate_against_count']} moderate sources against)")
         st.write(f"- Disagreement penalty: -{comps['disagreement_penalty']} (from {comps['disagreement_count']} source conflicts)")
 
     # What to watch
@@ -196,14 +205,13 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
     st.subheader("📋 Source Details")
     st.caption("Inspect raw signals. Every recommendation links back to these.")
 
-    col_a, col_b = st.columns(2)
+    col_a, col_b, col_c = st.columns(3)
     with col_a:
         with st.expander("📈 Google Trends", expanded=False):
             live_badge = "🟢 Live" if trends_data.get("live") else f"🔴 Cached ({trends_data.get('cached_at', 'unknown')})"
             st.caption(live_badge)
             if trends_data.get("error"):
                 st.warning(f"Error: {trends_data['error']}")
-            st.json({k: v for k, v in trends_data.items() if k not in ("interest_data",)})
             interest = trends_data.get("interest_data", {})
             if interest:
                 for term, data in interest.items():
@@ -211,17 +219,19 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                     st.write(f"  Current: {data.get('current')}  |  Direction: {data.get('direction')}  |  3m avg: {data.get('avg_3m')}")
             else:
                 st.caption("No search interest data available.")
-        with st.expander("🛒 Marketplace Data", expanded=False):
+        with st.expander("🛒 Myntra/Ajio", expanded=False):
             st.caption(f"Last updated: {marketplace_data.get('last_updated', 'unknown')}")
             if marketplace_data.get("products_found"):
-                st.table([
-                    {"Product": p["name"], "Platform": p["platform"], "Brand": p["brand"],
-                     "Price": f"₹{p['price']}", "Rank": p["rank"], "Rating": p["avg_rating"],
-                     "Reviews/30d": p["review_velocity"], "Discount": p["discount"]}
-                    for p in marketplace_data["products_found"]
-                ])
+                st.dataframe(
+                    [{"Product": p["name"], "Platform": p["platform"], "Brand": p["brand"],
+                      "Price": f"₹{p['price']}", "Rank": p["rank"], "Rating": p["avg_rating"],
+                      "Reviews/30d": p["review_velocity"], "Discount": p["discount"]}
+                     for p in marketplace_data["products_found"]
+                    ],
+                    hide_index=True, use_container_width=True
+                )
             else:
-                st.caption("No matching products found on marketplace.")
+                st.caption("No matching products found.")
     with col_b:
         with st.expander("📢 Competitor Ads (Meta)", expanded=False):
             st.caption(meta_data.get("disclaimer", ""))
@@ -232,6 +242,25 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                     st.write(f"- **{c['brand']}** — {c['product']} (₹{c['price']}, ad running {c['ad_running_days']}d, signal: {c['signal_strength']})")
             else:
                 st.caption("No competitors actively advertising this trend.")
+        with st.expander("📦 Meesho (Price-sensitive)", expanded=False):
+            st.caption(meesho_data.get("disclaimer", ""))
+            st.caption(meesho_data.get("platform_note", ""))
+            if meesho_data.get("products_found"):
+                st.dataframe(
+                    [{"Product": p["name"], "Price": f"₹{p['price']}",
+                      "Units Sold": p["units_sold"], "Rating": p["rating"],
+                      "Resellers": p["reseller_count"], "Growth": p["reseller_growth_mom"],
+                      "Regions": ", ".join(p["regions"][:3])}
+                     for p in meesho_data["products_found"]
+                    ],
+                    hide_index=True, use_container_width=True
+                )
+                st.metric("Total Resellers", meesho_data.get("total_resellers", 0))
+                st.metric("Total Units", f"{meesho_data.get('total_units_sold', 0):,}")
+                st.caption(f"Regions covered: {', '.join(meesho_data.get('regions_covered', []))}")
+            else:
+                st.caption("No matching products on Meesho.")
+    with col_c:
         with st.expander("💬 Review Signals", expanded=False):
             if review_data.get("available"):
                 st.caption(f"Reviews analyzed: {review_data.get('total_analyzed')}")
@@ -245,8 +274,31 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                     st.write(f"  👎 {c}")
             else:
                 st.caption("No review data available for this trend.")
+        with st.expander("✨ Nykaa Fashion (Premium)", expanded=False):
+            st.caption(nykaa_data.get("disclaimer", ""))
+            st.caption(nykaa_data.get("platform_note", ""))
+            if nykaa_data.get("products_found"):
+                st.dataframe(
+                    [{"Product": p["name"], "Brand": p["brand"],
+                      "Price": f"₹{p['price']}", "Discount": p["discount"],
+                      "Rating": p["rating"], "Stock": p["stock_status"],
+                      "Positioning": p["nykaa_positioning"]}
+                     for p in nykaa_data["products_found"]
+                    ],
+                    hide_index=True, use_container_width=True
+                )
+                st.caption(f"Avg price: ₹{nykaa_data.get('avg_price', 0):.0f} | Trickle-down gap: ₹{nykaa_data.get('trickle_down_potential', 0):.0f}")
+                if nykaa_data.get("full_price_products", 0) > 0:
+                    st.success(f"{nykaa_data['full_price_products']} products at near-zero discount (genuine demand)")
+                if nykaa_data.get("editorial_featured_count", 0) > 0:
+                    st.info(f"Featured in {nykaa_data['editorial_featured_count']} Nykaa editorial placement(s)")
+            else:
+                st.caption("No matching products on Nykaa Fashion.")
+            trend_notes = nykaa_data.get("trend_notes", "")
+            if trend_notes:
+                st.caption(f"📝 {trend_notes}")
 
-# -------- Empty State (no trend selected) --------
+    # -------- Empty State (no trend selected) --------
 else:
     st.markdown("---")
     st.info("👆 Select a trend above to run a full evidence analysis with bet sizing recommendation.")
