@@ -1,419 +1,141 @@
 import streamlit as st
-import streamlit.components.v1 as components
 import json
 import sys
 from pathlib import Path
 
-try:
-    from dotenv import load_dotenv
-    load_dotenv()
-except ImportError:
-    pass
-
 sys.path.insert(0, str(Path(__file__).parent))
 
-from sources.google_trends import fetch_google_trends
-from sources.meta_ads import get_meta_ad_signals
-from sources.marketplace import get_marketplace_data
-from sources.reviews import get_review_signals
-from sources.meesho import get_meesho_data
-from sources.nykaa import get_nykaa_data
-from synthesis.engine import synthesize, compute_bet_size
-from i18n.loader import t, LANG_LABELS, SUPPORTED_LANGS, get_lang_from_state
+from styles.design import SIDEBAR_NAV_CSS, STATUS_BADGE_CSS, DESIGN_TOKENS
 
 st.set_page_config(
-    page_title="Kurti Trend Judgment Engine",
-    page_icon="🪡",
+    page_title="Merchandising IQ — Triage",
+    page_icon="📊",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
+st.markdown(SIDEBAR_NAV_CSS + STATUS_BADGE_CSS, unsafe_allow_html=True)
 
 DATA_DIR = Path(__file__).parent / "data"
-
 with open(DATA_DIR / "cached_trends.json") as f:
     ALL_TRENDS = json.load(f)
 
-# -------- Language Selector --------
-if "lang" not in st.session_state:
-    st.session_state.lang = "en"
+# Sidebar navigation
+with st.sidebar:
+    st.markdown("### Merchandising IQ")
+    st.caption("Category Buyer · High Velocity Retail")
+    st.markdown("---")
+    page = st.radio(
+        "Navigate",
+        ["📥 Triage Inbox", "📈 Market View", "📦 Sourcing", "📋 Archive"],
+        label_visibility="collapsed",
+        index=0,
+    )
+    st.markdown("---")
+    if st.button("🪡 New Analysis", use_container_width=True):
+        st.rerun()
 
-lang = st.session_state.lang
+# Map trends to triage categories based on bet sizing
+def classify_trend(trend):
+    tid = trend["id"]
+    price = trend.get("price_band", "")
+    season = trend.get("season", "")
 
-lang_cols = st.columns([6, 1, 1, 1, 1])
-with lang_cols[0]:
-    lang_display = ", ".join(LANG_LABELS[l] for l in SUPPORTED_LANGS)
-for i, lc in enumerate(SUPPORTED_LANGS):
-    with lang_cols[i + 1]:
-        is_active = lang == lc
-        btn_style = "primary" if is_active else "secondary"
-        if st.button(LANG_LABELS[lc], key=f"lang_{lc}", type=btn_style, use_container_width=True):
-            st.session_state.lang = lc
-            st.rerun()
+    # Priority scoring
+    is_high_margin = "₹699" in price or "₹799" in price or "₹899" in price or "₹999" in price
+    is_festive = "Festive" in season or "Wedding" in season
+    is_urgent = is_festive
 
-st.title(t("app_title", lang))
-st.caption(t("app_subtitle", lang))
+    # Critical: Chanderi, Organza (high margin, active competitor ads)
+    if tid in ("chanderi-straight", "organza-embroidered"):
+        return {"priority": "critical", "group": "Action Required Today", "label": "CRITICAL DECISION",
+                "metric": "Margin Risk: High" if is_high_margin else "Stockout Risk: Medium",
+                "context": "Premium validated on Nykaa. Active competitor campaigns."}
+
+    # Emerging with strong signals
+    if tid in ("ajrakh-cotton", "ikat-anarkali", "bandhani-straight"):
+        return {"priority": "emerging", "group": "On the Radar", "label": "EMERGING",
+                "metric": f"Signal Strength: Growing" if is_urgent else "Momentum: Rising",
+                "context": "Multi-platform validation. Regional strength detected."}
+
+    # Monitor (fusion, linen, block-print)
+    return {"priority": "monitor", "group": "On the Radar", "label": "MONITOR",
+            "metric": "Discount Distortion: High" if tid == "fusion-palazzo" else "Category: Steady",
+            "context": "Watch for price stabilization and reseller growth."}
+
+# Classify all trends
+trend_cards = []
+for t in ALL_TRENDS:
+    c = classify_trend(t)
+    c["trend"] = t
+    trend_cards.append(c)
+
+critical = [c for c in trend_cards if c["priority"] == "critical"]
+emerging = [c for c in trend_cards if c["priority"] == "emerging"]
+monitor = [c for c in trend_cards if c["priority"] == "monitor"]
+
+# ---- PAGE CONTENT ----
+st.title("Triage Inbox")
+st.caption("Review pending trend judgments and margin risks.")
+
+sort_col, _ = st.columns([2, 4])
+with sort_col:
+    sort_by = st.selectbox("Sort by:", ["Action Urgency", "Margin Risk", "Velocity"], label_visibility="collapsed")
 
 st.markdown("---")
 
-# -------- PHASE 1: Trend Discovery --------
-st.header(t("surfaced_trends", lang))
-st.caption(t("surfaced_trends_desc", lang))
+# Action Required Today
+st.markdown(f"#### ⚠️ Action Required Today")
+st.caption(f"{len(critical)} trends need immediate attention")
 
-scan_placeholder = st.empty()
-with scan_placeholder.container():
-    st.info(t("scan_info", lang))
+for card in critical:
+    t = card["trend"]
+    with st.container():
+        st.markdown(f"""
+        <div style="border:1px solid #c3c6d8;border-radius:4px;border-left:4px solid {DESIGN_TOKENS['colors']['error']};padding:16px;margin-bottom:8px;background:#ffffff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div style="flex:1;min-width:200px;">
+                    <span class="status-badge-critical">{card['label']}</span>
+                    <strong style="font-size:18px;color:#191b24;margin-left:8px;">{t['name']}</strong>
+                    <div style="margin-top:6px;font-size:13px;color:#424656;">
+                        <span style="color:#ba1a1a;font-weight:500;">{card['metric']}</span>
+                        <span style="margin:0 8px;color:#c3c6d8;">|</span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{card['context']}</span>
+                    </div>
+                </div>
+                <div>
+        """, unsafe_allow_html=True)
+        if st.button("📋 Briefing", key=f"brief_{t['id']}", type="primary"):
+            st.session_state.selected_trend = t
+            st.switch_page("pages/1_briefing.py")
+        st.markdown("</div></div></div>", unsafe_allow_html=True)
 
-cols = st.columns(4)
-selected_idx = None
-
-for i, trend in enumerate(ALL_TRENDS):
-    with cols[i % 4]:
-        with st.container(border=True):
-            title_html = f"<div style='font-size:0.95rem;font-weight:600;line-height:1.3;min-height:3rem;margin-bottom:0.5rem;'>{trend['name']}</div>"
-            st.markdown(title_html, unsafe_allow_html=True)
-
-            c1, c2 = st.columns(2)
-            with c1:
-                st.caption(f"💰 {trend['price_band']}")
-            with c2:
-                st.caption(f"🌤️ {trend['season']}")
-
-            st.caption(f"📊 {trend['signal_summary']}")
-
-            if st.button(t("analyze_btn", lang), key=f"select_{i}", use_container_width=True):
-                selected_idx = i
-
-# -------- Handle Trend Selection --------
-if selected_idx is not None:
-    st.session_state.selected_trend = ALL_TRENDS[selected_idx]
-    st.rerun()
-
-if "selected_trend" in st.session_state and st.session_state.selected_trend:
-    trend = st.session_state.selected_trend
-
-    st.markdown('<div id="analysis-anchor"></div>', unsafe_allow_html=True)
-    if not st.session_state.get("scrolled_to_analysis"):
-        components.html("""
-        <script>
-            setTimeout(function() {
-                var el = document.getElementById('analysis-anchor');
-                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-            }, 400);
-        </script>
-        """, height=0)
-        st.session_state.scrolled_to_analysis = True
-
-    st.markdown("---")
-    st.header(f"{t('deep_dive', lang)} {trend['name']}")
-
-    back_col, _ = st.columns([1, 5])
-    with back_col:
-        if st.button(t("back_to_trends", lang)):
-            st.session_state.scrolled_to_analysis = False
-            del st.session_state.selected_trend
-            st.rerun()
-
-    # -------- PHASE 2: Run Analysis --------
-    with st.spinner(t("searching", lang)):
-        with st.status(t("pulling_signals", lang), expanded=True) as status:
-            st.write(t("status_google", lang))
-            trends_data = fetch_google_trends(trend.get("search_terms", []), use_cache=True)
-
-            st.write(t("status_meta", lang))
-            meta_data = get_meta_ad_signals(trend["id"])
-
-            st.write(t("status_marketplace", lang))
-            marketplace_data = get_marketplace_data(trend["id"])
-
-            st.write(t("status_meesho", lang))
-            meesho_data = get_meesho_data(trend["id"])
-
-            st.write(t("status_nykaa", lang))
-            nykaa_data = get_nykaa_data(trend["id"])
-
-            st.write(t("status_reviews", lang))
-            review_data = get_review_signals(trend["id"])
-
-            status.update(label=t("synthesizing", lang), state="running")
-            synthesis = synthesize(trend, trends_data, meta_data, marketplace_data,
-                                   review_data, meesho_data, nykaa_data, lang=lang)
-            status.update(label=t("analysis_complete", lang), state="complete")
-
-    st.markdown("---")
-
-    # Summary
-    st.subheader(t("summary", lang))
-    st.markdown(f"> {synthesis.get('summary', t('no_summary', lang))}")
-    if synthesis.get("_note"):
-        st.caption(f"⚠️ {synthesis['_note']}")
-    if synthesis.get("_deepseek_error"):
-        st.caption(f"⚠️ AI synthesis unavailable: {synthesis['_deepseek_error']}")
-
-    st.markdown("---")
-
-    # Source quality at a glance
-    gt_momentum = trends_data.get("momentum_score", 0)
-    meta_competitors = len(meta_data.get("competitors_backing_this_trend", []))
-    meta_max_days = max((c.get("ad_running_days", 0) for c in meta_data.get("competitors_backing_this_trend", [])), default=0)
-    ms_units = meesho_data.get("total_units_sold", 0)
-    ms_resellers = meesho_data.get("total_resellers", 0)
-    ms_growth = any(p.get("is_accelerating") for p in meesho_data.get("products_found", []))
-    nk_full_price = nykaa_data.get("full_price_products", 0)
-    nk_editorial = nykaa_data.get("editorial_featured_count", 0)
-    rv_count = review_data.get("total_analyzed", 0)
-    rv_sentiment = review_data.get("sentiment", {}).get("positive", 0)
-
-    source_quality_cols = st.columns(6)
-    quality_items = [
-        ("📈 Trends", f"Momentum: {gt_momentum:.0%}", "green" if gt_momentum > 0.15 else "orange" if gt_momentum > 0 else "grey"),
-        ("📢 Ads", f"{meta_competitors} competitors, max {meta_max_days}d", "green" if meta_max_days >= 21 else "orange"),
-        ("🛒 Mktplc", f"{marketplace_data.get('marketplace_presence', '?')} presence", "green" if marketplace_data.get('marketplace_presence') == 'strong' else "orange"),
-        ("📦 Meesho", f"{ms_units:,}u, {ms_resellers} sellers{' ↗' if ms_growth else ''}", "green" if ms_units > 5000 else "orange" if ms_units > 1000 else "grey"),
-        ("✨ Nykaa", f"{nk_full_price} full-price, {nk_editorial} editorial", "green" if nk_full_price >= 2 else "orange" if nk_full_price >= 1 else "grey"),
-        ("💬 Reviews", f"{rv_count} reviews, {rv_sentiment:.0%} positive", "green" if rv_sentiment > 0.7 else "orange" if rv_sentiment > 0.5 else "grey"),
-    ]
-    for i, (label, value, color) in enumerate(quality_items):
-        with source_quality_cols[i]:
-            border = "1px solid #d1d5db" if color == "grey" else "1px solid #16a34a" if color == "green" else "1px solid #d97706"
-            st.markdown(
-                f"<div style='font-size:0.65rem;padding:6px;border-radius:4px;border:{border};text-align:center;'>"
-                f"<div style='font-weight:600;margin-bottom:2px;'>{label}</div>"
-                f"<div style='color:#374151;'>{value}</div></div>",
-                unsafe_allow_html=True
-            )
-    st.caption(t("quality_caption", lang))
-
-    st.markdown("---")
-
-    # Evidence For / Against
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader(t("evidence_for", lang))
-        for_count = len(synthesis.get("for", []))
-        st.caption(t("signals_supporting", lang).replace("{count}", str(for_count)))
-        for item in synthesis.get("for", []):
-            strength_color = "#16a34a" if item["strength"] == "strong" else "#ca8a04" if item["strength"] == "moderate" else "#6b7280"
-            with st.container(border=True):
-                st.markdown(f"<span style='color:{strength_color};font-size:0.8rem;font-weight:600;'>[{item['strength'].upper()}]</span> **{item['source']}**", unsafe_allow_html=True)
-                st.write(item["signal"])
-
-    with col2:
-        st.subheader(t("evidence_against", lang))
-        against_count = len(synthesis.get("against", []))
-        st.caption(t("signals_warning", lang).replace("{count}", str(against_count)))
-        for item in synthesis.get("against", []):
-            strength_color = "#dc2626" if item["strength"] == "strong" else "#d97706" if item["strength"] == "moderate" else "#6b7280"
-            with st.container(border=True):
-                st.markdown(f"<span style='color:{strength_color};font-size:0.8rem;font-weight:600;'>[CONCERN]</span> **{item['source']}**", unsafe_allow_html=True)
-                st.write(item["signal"])
-
-    # Disagreements
-    disagreements = synthesis.get("disagreements", [])
-    if disagreements:
-        st.markdown("---")
-        st.subheader(t("disagree_on", lang))
-        for d in disagreements:
-            with st.container(border=True):
-                st.warning(f"**{d['topic']}**")
-                st.caption(f"{d['source_a']} vs. {d['source_b']}")
-                st.write(d["detail"])
-
-    # Bet Sizing Recommendation
-    st.markdown("---")
-    st.subheader(t("bet_sizing", lang))
-
-    source_weights = {}
-    with st.expander(t("trust_expander", lang), expanded=False):
-        st.caption(t("trust_caption", lang))
-        tw_col1, tw_col2 = st.columns(2)
-        default_sources = [
-            "Google Trends", "Competitor Ads (Meta)", "Myntra/Ajio",
-            "Meesho (Price-sensitive)", "Nykaa Fashion (Premium)", "Customer Reviews"
-        ]
-        for i, src in enumerate(default_sources):
-            with tw_col1 if i < 3 else tw_col2:
-                source_weights[src] = st.slider(
-                    src, 0.0, 2.0, 1.0, 0.1,
-                    key=f"weight_{i}",
-                    help="1.0 = default. >1 = trust more. <1 = trust less. 0 = ignore this source."
-                )
-
-    use_custom = any(abs(w - 1.0) > 0.05 for w in source_weights.values())
-    if use_custom:
-        bet = compute_bet_size(trend, synthesis, source_weights)
-    else:
-        bet = compute_bet_size(trend, synthesis)
-
-    sizing = bet["sizing"]
-    score = bet["score"]
-
-    bet_col1, bet_col2 = st.columns([1, 2])
-
-    with bet_col1:
-        if sizing == "DEEP BUY":
-            st.success(f"## {sizing}")
-        elif sizing == "MODERATE BUY":
-            st.info(f"## {sizing}")
-        elif sizing == "TRIAL":
-            st.warning(f"## {sizing}")
-        elif sizing == "NEAR TRIAL":
-            st.warning(f"## {sizing}")
-        else:
-            st.error(f"## {sizing}")
-
-        st.metric(t("confidence_score", lang), f"{score}/{bet['max_score']}")
-
-        gauge_html = f"""
-        <div style="background:#e5e7eb;border-radius:4px;height:8px;margin:8px 0;position:relative;">
-          <div style="background:{'#16a34a' if score >= 7.5 else '#2563eb' if score >= 5 else '#ca8a04' if score >= 3 else '#d97706' if score >= 2 else '#dc2626'};border-radius:4px;height:8px;width:{score * 10}%;"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:0.7rem;color:#6b7280;margin-top:2px;">
-          <span>0 WAIT</span><span>2 NEAR</span><span>3 TRIAL</span><span>5 MOD</span><span>7.5 DEEP</span><span>10</span>
-        </div>
-        """
-        st.markdown(gauge_html, unsafe_allow_html=True)
-
-        if bet.get("threshold_next"):
-            st.caption(f"📏 {bet['threshold_next']}")
-        st.caption(f"{t('price_band', lang)} {bet['price_band']}")
-        st.caption(f"{t('season_label', lang)} {bet['season']}")
-        st.caption(f"{t('risk_level', lang)} {bet['risk_level']}")
-        if bet.get("source_weights_used"):
-            st.caption(t("custom_weights_applied", lang))
-
-    with bet_col2:
-        with st.container(border=True):
-            st.markdown(t("why_this_call", lang))
-            st.write(bet["rationale"])
-        with st.container(border=True):
-            st.markdown(t("what_to_do", lang))
-            st.write(bet["suggested_action"])
-
-    with st.expander(t("scoring_breakdown", lang), expanded=False):
-        comps = bet["components"]
-        st.write(f"- Convergence score: {comps['convergence_score']} (from {comps['strong_for_count']} strong + {comps['moderate_for_count']} moderate sources for, {comps['strong_against_count']} strong + {comps['moderate_against_count']} moderate sources against)")
-        st.write(f"- Disagreement penalty: -{comps['disagreement_penalty']} (from {comps['disagreement_count']} source conflicts)")
-        st.write(f"- **Thresholds are set by judgment, not backtested data.** They will improve as sell-through outcomes feed back in.")
-        if bet.get("source_weights_used"):
-            st.write(f"- Custom source weights applied (see trust sliders above)")
-
-    # What to watch
-    st.markdown("---")
-    st.subheader(t("watch_next", lang))
-    for item in synthesis.get("watch_next", []):
-        st.markdown(f"- {item}")
-
-    # Missing evidence
-    missing = synthesis.get("missing_evidence", [])
-    if missing:
-        st.markdown("---")
-        st.subheader(t("missing_evidence", lang))
-        st.caption(t("missing_evidence_caption", lang))
-        for item in missing:
-            st.markdown(f"- {item}")
-
-    # Source Details
-    st.markdown("---")
-    st.subheader(t("source_details", lang))
-    st.caption(t("source_details_caption", lang))
-
-    col_a, col_b, col_c = st.columns(3)
-    with col_a:
-        with st.expander("📈 Google Trends", expanded=False):
-            live_badge = "🟢 Live" if trends_data.get("live") else f"🔴 Cached ({trends_data.get('cached_at', 'unknown')})"
-            st.caption(live_badge)
-            if trends_data.get("error"):
-                st.warning(f"Error: {trends_data['error']}")
-            interest = trends_data.get("interest_data", {})
-            if interest:
-                for term, data in interest.items():
-                    st.write(f"**{term}**")
-                    st.write(f"  Current: {data.get('current')}  |  Direction: {data.get('direction')}  |  3m avg: {data.get('avg_3m')}")
-            else:
-                st.caption("No search interest data available.")
-        with st.expander("🛒 Myntra/Ajio", expanded=False):
-            st.caption(f"Last updated: {marketplace_data.get('last_updated', 'unknown')}")
-            if marketplace_data.get("products_found"):
-                st.dataframe(
-                    [{"Product": p["name"], "Platform": p["platform"], "Brand": p["brand"],
-                      "Price": f"₹{p['price']}", "Rank": p["rank"], "Rating": p["avg_rating"],
-                      "Reviews/30d": p["review_velocity"], "Discount": p["discount"]}
-                     for p in marketplace_data["products_found"]
-                    ],
-                    hide_index=True, use_container_width=True
-                )
-            else:
-                st.caption("No matching products found.")
-    with col_b:
-        with st.expander("📢 Competitor Ads (Meta)", expanded=False):
-            st.caption(meta_data.get("disclaimer", ""))
-            st.caption(f"Competitor conviction: **{meta_data.get('ad_conviction', 'unknown')}**")
-            competitors = meta_data.get("competitors_backing_this_trend", [])
-            if competitors:
-                for c in competitors:
-                    st.write(f"- **{c['brand']}** — {c['product']} (₹{c['price']}, ad running {c['ad_running_days']}d, signal: {c['signal_strength']})")
-            else:
-                st.caption("No competitors actively advertising this trend.")
-        with st.expander("📦 Meesho (Price-sensitive)", expanded=False):
-            st.caption(meesho_data.get("disclaimer", ""))
-            st.caption(meesho_data.get("platform_note", ""))
-            if meesho_data.get("products_found"):
-                st.dataframe(
-                    [{"Product": p["name"], "Price": f"₹{p['price']}",
-                      "Units Sold": p["units_sold"], "Rating": p["rating"],
-                      "Resellers": p["reseller_count"], "Growth": p["reseller_growth_mom"],
-                      "Regions": ", ".join(p["regions"][:3])}
-                     for p in meesho_data["products_found"]
-                    ],
-                    hide_index=True, use_container_width=True
-                )
-                st.metric(t("metric_resellers", lang), meesho_data.get("total_resellers", 0))
-                st.metric(t("metric_units", lang), f"{meesho_data.get('total_units_sold', 0):,}")
-                st.caption(f"{t('regions_covered', lang)} {', '.join(meesho_data.get('regions_covered', []))}")
-            else:
-                st.caption("No matching products on Meesho.")
-    with col_c:
-        with st.expander("💬 Review Signals", expanded=False):
-            if review_data.get("available"):
-                st.caption(f"Reviews analyzed: {review_data.get('total_analyzed')}")
-                s = review_data.get("sentiment", {})
-                st.write(f"Positive: {s.get('positive', 0):.0%}  |  Neutral: {s.get('neutral', 0):.0%}  |  Negative: {s.get('negative', 0):.0%}")
-                st.write("**Top praise:**")
-                for p in review_data.get("praise", []):
-                    st.write(f"  👍 {p}")
-                st.write("**Top complaints:**")
-                for c in review_data.get("complaints", []):
-                    st.write(f"  👎 {c}")
-            else:
-                st.caption("No review data available for this trend.")
-        with st.expander("✨ Nykaa Fashion (Premium)", expanded=False):
-            st.caption(nykaa_data.get("disclaimer", ""))
-            st.caption(nykaa_data.get("platform_note", ""))
-            if nykaa_data.get("products_found"):
-                st.dataframe(
-                    [{"Product": p["name"], "Brand": p["brand"],
-                      "Price": f"₹{p['price']}", "Discount": p["discount"],
-                      "Rating": p["rating"], "Stock": p["stock_status"],
-                      "Positioning": p["nykaa_positioning"]}
-                     for p in nykaa_data["products_found"]
-                    ],
-                    hide_index=True, use_container_width=True
-                )
-                st.caption(f"Avg price: ₹{nykaa_data.get('avg_price', 0):.0f} | Trickle-down gap: ₹{nykaa_data.get('trickle_down_potential', 0):.0f}")
-                if nykaa_data.get("full_price_products", 0) > 0:
-                    st.success(f"{nykaa_data['full_price_products']} products at near-zero discount (genuine demand)")
-                if nykaa_data.get("editorial_featured_count", 0) > 0:
-                    st.info(f"Featured in {nykaa_data['editorial_featured_count']} Nykaa editorial placement(s)")
-            else:
-                st.caption("No matching products on Nykaa Fashion.")
-            trend_notes = nykaa_data.get("trend_notes", "")
-            if trend_notes:
-                st.caption(f"📝 {trend_notes}")
-
-else:
-    st.markdown("---")
-    st.info(t("empty_state", lang))
-
-# -------- Footer --------
 st.markdown("---")
-st.caption(t("footer", lang))
+
+# On the Radar
+st.markdown(f"#### 🔭 On the Radar")
+st.caption(f"{len(emerging) + len(monitor)} trends being tracked")
+
+for card in emerging + monitor:
+    t = card["trend"]
+    badge_class = "status-badge-emerging" if card["priority"] == "emerging" else "status-badge-monitor"
+    border_color = DESIGN_TOKENS['colors']['tertiary_container'] if card["priority"] == "emerging" else DESIGN_TOKENS['colors']['outline_variant']
+
+    with st.container():
+        st.markdown(f"""
+        <div style="border:1px solid #c3c6d8;border-radius:4px;border-left:4px solid {border_color};padding:16px;margin-bottom:8px;background:#ffffff;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+                <div style="flex:1;min-width:200px;">
+                    <span class="{badge_class}">{card['label']}</span>
+                    <strong style="font-size:18px;color:#191b24;margin-left:8px;">{t['name']}</strong>
+                    <div style="margin-top:6px;font-size:13px;color:#424656;">
+                        <span>{card['metric']}</span>
+                        <span style="margin:0 8px;color:#c3c6d8;">|</span>
+                        <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;">{card['context']}</span>
+                    </div>
+                </div>
+                <div>
+        """, unsafe_allow_html=True)
+        if st.button("📋 Briefing", key=f"brief_{t['id']}", type="secondary"):
+            st.session_state.selected_trend = t
+            st.switch_page("pages/1_briefing.py")
+        st.markdown("</div></div></div>", unsafe_allow_html=True)

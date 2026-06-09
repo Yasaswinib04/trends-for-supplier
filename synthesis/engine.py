@@ -73,10 +73,14 @@ Output the structured JSON as specified."""
                 ],
                 temperature=0.3,
                 response_format={"type": "json_object"},
-                max_tokens=2500,
+                max_tokens=3000,
             )
             content = response.choices[0].message.content
             result = json.loads(_clean_json_response(content))
+            # Ensure new fields exist even if LLM misses them
+            result = _ensure_new_fields(result, trend, trends_data, meta_data,
+                                         marketplace_data, review_data,
+                                         meesho_data, nykaa_data)
         except Exception as e:
             result = _rule_based_fallback(
                 trend, trends_data, meta_data, marketplace_data,
@@ -91,6 +95,217 @@ Output the structured JSON as specified."""
         result["_note"] = "No DEEPSEEK_API_KEY set. Using rule-based fallback synthesis."
 
     return result
+
+
+def _ensure_new_fields(result, trend, trends_data, meta_data, marketplace_data,
+                        review_data, meesho_data, nykaa_data):
+    """Ensure the new PRD fields exist in LLM output; fill from rule-based if missing."""
+    if "upside_bullets" not in result or not result["upside_bullets"]:
+        fb = _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
+                                   review_data, meesho_data, nykaa_data)
+        result["upside_bullets"] = fb.get("upside_bullets", [])
+    if "catch_bullets" not in result or not result["catch_bullets"]:
+        fb = _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
+                                   review_data, meesho_data, nykaa_data)
+        result["catch_bullets"] = fb.get("catch_bullets", [])
+    if "system_suggestion" not in result or not result["system_suggestion"]:
+        fb = _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
+                                   review_data, meesho_data, nykaa_data)
+        result["system_suggestion"] = fb.get("system_suggestion", "")
+    if "margin_risk" not in result:
+        result["margin_risk"] = _compute_margin_risk(marketplace_data)
+    if "inventory_velocity" not in result:
+        result["inventory_velocity"] = _compute_inventory_velocity(marketplace_data, meesho_data)
+    if "otb_impact" not in result:
+        result["otb_impact"] = _compute_otb_impact(result)
+    return result
+
+
+def _compute_margin_risk(marketplace_data):
+    discount_risk = marketplace_data.get("discount_distortion_risk", "low")
+    if discount_risk == "high":
+        return "High"
+    avg_rank = marketplace_data.get("avg_rank", 50)
+    if avg_rank <= 15:
+        return "Low"
+    return "Medium"
+
+
+def _compute_inventory_velocity(marketplace_data, meesho_data):
+    velocity = marketplace_data.get("review_velocity_30d", 0)
+    meesho_units = (meesho_data or {}).get("total_units_sold", 0)
+    total_signal = velocity + (meesho_units / 100)
+    if total_signal >= 150:
+        return "Fast"
+    elif total_signal >= 50:
+        return "Moderate"
+    return "Slow"
+
+
+def _compute_otb_impact(synthesis):
+    strong_for = sum(1 for e in synthesis.get("for", []) if e.get("strength") == "strong")
+    strong_against = sum(1 for e in synthesis.get("against", []) if e.get("strength") == "strong")
+    if strong_for >= 4:
+        return "Major"
+    elif strong_for >= 2:
+        return "Moderate"
+    return "Minor"
+
+
+def _generate_upside_bullets(evidence_for, trends_data, meta_data, marketplace_data,
+                              meesho_data, nykaa_data):
+    """Generate 2-3 punchy upside bullets (max 12 words each) from evidence."""
+    bullets = []
+
+    # Prioritize strongest signals
+    strong_for = [e for e in evidence_for if e["strength"] == "strong"]
+    moderate_for = [e for e in evidence_for if e["strength"] == "moderate"]
+    candidates = strong_for + moderate_for
+
+    source_key_map = {
+        "Google Trends": "google_trends",
+        "Competitor Ads (Meta)": "meta_ads",
+        "Myntra/Ajio": "marketplace",
+        "Meesho (Price-sensitive)": "meesho",
+        "Meesho (Reseller growth)": "meesho",
+        "Nykaa Fashion (Premium)": "nykaa",
+        "Nykaa Editorial": "nykaa",
+        "Customer Reviews": "reviews",
+        "Cross-source (Meesho + Nykaa)": "meesho",
+    }
+
+    # Generate punchy bullets from top evidence
+    for e in candidates[:3]:
+        source = e["source"]
+        source_key = source_key_map.get(source, "google_trends")
+        text = _make_punchy(e, source)
+        if text:
+            bullets.append({"text": text, "source_key": source_key})
+
+    # Ensure at least 2 bullets
+    if len(bullets) < 2:
+        if trends_data.get("momentum_score", 0) > 0:
+            bullets.append({
+                "text": f"Search momentum rising. Early buyer intent signal.",
+                "source_key": "google_trends"
+            })
+        if nykaa_data and nykaa_data.get("full_price_products", 0) > 0:
+            bullets.append({
+                "text": "Selling at full MRP on Nykaa. Genuine demand.",
+                "source_key": "nykaa"
+            })
+
+    return bullets[:3]
+
+
+def _generate_catch_bullets(evidence_against, disagreements, marketplace_data, meesho_data):
+    """Generate 2-3 punchy catch bullets (max 12 words each) from risks."""
+    bullets = []
+
+    source_key_map = {
+        "Google Trends": "google_trends",
+        "Competitor Ads (Meta)": "meta_ads",
+        "Myntra/Ajio": "marketplace",
+        "Meesho (Price-sensitive)": "meesho",
+        "Nykaa Fashion (Premium)": "nykaa",
+        "Customer Reviews": "reviews",
+    }
+
+    # From evidence against
+    strong_against = [e for e in evidence_against if e["strength"] in ("strong", "moderate")]
+    for e in strong_against[:2]:
+        source = e["source"]
+        source_key = source_key_map.get(source, "marketplace")
+        text = _make_punchy_risk(e, source)
+        if text:
+            bullets.append({"text": text, "source_key": source_key})
+
+    # From disagreements
+    for d in disagreements[:1]:
+        bullets.append({
+            "text": f"Sources clash: {d['topic'][:30]}. Verify before commit.",
+            "source_key": "marketplace"
+        })
+
+    # Ensure at least 2
+    if len(bullets) < 2:
+        meesho_presence = (meesho_data or {}).get("meesho_presence", "absent")
+        if meesho_presence == "absent":
+            bullets.append({
+                "text": "Zero Meesho traction. Mass market gap remains.",
+                "source_key": "meesho"
+            })
+        discount_risk = marketplace_data.get("discount_distortion_risk", "low")
+        if discount_risk == "high":
+            bullets.append({
+                "text": "Heavy discounting on marketplace. MRP validation weak.",
+                "source_key": "marketplace"
+            })
+
+    return bullets[:3]
+
+
+def _make_punchy(evidence, source):
+    """Convert a for-evidence item into a max-12-word bullet."""
+    signal = evidence["signal"]
+    strength = evidence["strength"]
+
+    if "full MRP" in signal or "full price" in signal or "near-zero discount" in signal:
+        return "Selling at full MRP. No discount pressure yet."
+    if "reseller" in signal.lower() and "accelerat" in signal.lower():
+        return "Reseller growth accelerating. Leading demand indicator."
+    if "complete demand pyramid" in signal.lower():
+        return "Demand proven across all price bands. Strong pyramid."
+    if "momentum" in signal.lower() and "rising" in signal.lower():
+        return "Search momentum rising fast. Early buyer intent."
+    if "competitor" in signal.lower() and strength == "strong":
+        return "Multiple competitors backing with sustained ad spend."
+    if "organic demand" in signal.lower():
+        return "Strong marketplace rank with low discounting. Organic demand."
+    if "editorial" in signal.lower():
+        return "Nykaa editorial placement. Merchandising conviction signal."
+    if "sentiment" in signal.lower() and "positive" in signal.lower():
+        return "Customer reviews strongly positive. Good value perception."
+
+    # Fallback: truncate the signal
+    words = signal.split()[:12]
+    return " ".join(words)
+
+
+def _make_punchy_risk(evidence, source):
+    """Convert an against-evidence item into a max-12-word bullet."""
+    signal = evidence["signal"]
+
+    if "no competitor" in signal.lower() or "no.*backing" in signal.lower():
+        return "Zero competitor ad conviction. Untested territory."
+    if "discount" in signal.lower() and "distort" in signal.lower():
+        return "Heavy discounting inflates rank. Full-price demand unproven."
+    if "no meesho" in signal.lower() or "no.*presence" in signal.lower():
+        return "Absent from Meesho. Mass market demand unknown."
+    if "wash" in signal.lower() or "bleed" in signal.lower() or "fade" in signal.lower():
+        return "Wash durability risk. Color bleed/fade reported."
+    if "sizing" in signal.lower():
+        return "Sizing inconsistency flagged. Return risk elevated."
+    if "declining" in signal.lower():
+        return "Search momentum declining. Fading buyer interest."
+
+    words = signal.split()[:12]
+    return " ".join(words)
+
+
+def _generate_system_suggestion(sizing, trend):
+    """Generate a single-sentence inventory directive."""
+    tname = trend.get("name", "this trend")
+    season = trend.get("season", "")
+
+    suggestions = {
+        "DEEP BUY": f"DEEP BUY: Commit 60-70% of {season.lower()} OTB. Allocate to top 50 stores.",
+        "MODERATE BUY": f"MODERATE BET: Commit 30-50% of {season.lower()} OTB with re-orderable fabric.",
+        "TRIAL": f"TRIAL BET: 300-500 units in top 20 stores. Re-order fabric on standby.",
+        "NEAR TRIAL": f"HOLD: Monitor for 2 weeks. One more signal upgrade triggers TRIAL.",
+        "WAIT": f"PASS: No buy this cycle. Re-check in 2-4 weeks for signal convergence.",
+    }
+    return suggestions.get(sizing, f"MONITOR: Insufficient evidence for {tname}.")
 
 
 def _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
@@ -382,6 +597,27 @@ def _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
     else:
         summary += "Wait for stronger signal convergence before committing inventory."
 
+    # --- Compute bet size for system_suggestion ---
+    synthesis_partial = {
+        "for": evidence_for,
+        "against": evidence_against,
+        "disagreements": disagreements,
+    }
+    bet = compute_bet_size(trend, synthesis_partial)
+    sizing = bet["sizing"]
+
+    # --- Generate new PRD fields ---
+    upside_bullets = _generate_upside_bullets(
+        evidence_for, trends_data, meta_data, marketplace_data, meesho_data, nykaa_data
+    )
+    catch_bullets = _generate_catch_bullets(
+        evidence_against, disagreements, marketplace_data, meesho_data
+    )
+    system_suggestion = _generate_system_suggestion(sizing, trend)
+    margin_risk = _compute_margin_risk(marketplace_data)
+    inventory_velocity = _compute_inventory_velocity(marketplace_data, meesho_data)
+    otb_impact = _compute_otb_impact(synthesis_partial)
+
     return {
         "summary": summary,
         "for": evidence_for,
@@ -390,6 +626,13 @@ def _rule_based_fallback(trend, trends_data, meta_data, marketplace_data,
         "missing_evidence": missing,
         "confidence_assessment": confidence,
         "watch_next": watch,
+        # New PRD fields
+        "upside_bullets": upside_bullets,
+        "catch_bullets": catch_bullets,
+        "system_suggestion": system_suggestion,
+        "margin_risk": margin_risk,
+        "inventory_velocity": inventory_velocity,
+        "otb_impact": otb_impact,
     }
 
 
