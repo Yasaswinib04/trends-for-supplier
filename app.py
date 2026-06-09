@@ -4,7 +4,6 @@ import json
 import sys
 from pathlib import Path
 
-# Load .env file before anything else
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -20,6 +19,7 @@ from sources.reviews import get_review_signals
 from sources.meesho import get_meesho_data
 from sources.nykaa import get_nykaa_data
 from synthesis.engine import synthesize, compute_bet_size
+from i18n.loader import t, LANG_LABELS, SUPPORTED_LANGS, get_lang_from_state
 
 st.set_page_config(
     page_title="Kurti Trend Judgment Engine",
@@ -33,19 +33,35 @@ DATA_DIR = Path(__file__).parent / "data"
 with open(DATA_DIR / "cached_trends.json") as f:
     ALL_TRENDS = json.load(f)
 
-st.title("🪡 Kurti Trend Judgment Engine")
-st.caption("For category buyers: find early evidence, judge it honestly, decide what inventory to bet on.")
+# -------- Language Selector --------
+if "lang" not in st.session_state:
+    st.session_state.lang = "en"
+
+lang = st.session_state.lang
+
+lang_cols = st.columns([6, 1, 1, 1, 1])
+with lang_cols[0]:
+    lang_display = ", ".join(LANG_LABELS[l] for l in SUPPORTED_LANGS)
+for i, lc in enumerate(SUPPORTED_LANGS):
+    with lang_cols[i + 1]:
+        is_active = lang == lc
+        btn_style = "primary" if is_active else "secondary"
+        if st.button(LANG_LABELS[lc], key=f"lang_{lc}", type=btn_style, use_container_width=True):
+            st.session_state.lang = lc
+            st.rerun()
+
+st.title(t("app_title", lang))
+st.caption(t("app_subtitle", lang))
 
 st.markdown("---")
 
 # -------- PHASE 1: Trend Discovery --------
-st.header("Surfaced Trends")
-st.caption("Trends surfaced from competitor activity, search momentum, and marketplace movement. Select one to investigate.")
+st.header(t("surfaced_trends", lang))
+st.caption(t("surfaced_trends_desc", lang))
 
-# Animated scan indicator
 scan_placeholder = st.empty()
 with scan_placeholder.container():
-    st.info("📡 Scanned 6 sources · 8 trends surfaced · Last updated just now")
+    st.info(t("scan_info", lang))
 
 cols = st.columns(4)
 selected_idx = None
@@ -64,7 +80,7 @@ for i, trend in enumerate(ALL_TRENDS):
 
             st.caption(f"📊 {trend['signal_summary']}")
 
-            if st.button("Analyze →", key=f"select_{i}", use_container_width=True):
+            if st.button(t("analyze_btn", lang), key=f"select_{i}", use_container_width=True):
                 selected_idx = i
 
 # -------- Handle Trend Selection --------
@@ -75,7 +91,6 @@ if selected_idx is not None:
 if "selected_trend" in st.session_state and st.session_state.selected_trend:
     trend = st.session_state.selected_trend
 
-    # Auto-scroll to analysis on load
     st.markdown('<div id="analysis-anchor"></div>', unsafe_allow_html=True)
     if not st.session_state.get("scrolled_to_analysis"):
         components.html("""
@@ -89,47 +104,46 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
         st.session_state.scrolled_to_analysis = True
 
     st.markdown("---")
-    st.header(f"Deep Dive: {trend['name']}")
+    st.header(f"{t('deep_dive', lang)} {trend['name']}")
 
     back_col, _ = st.columns([1, 5])
     with back_col:
-        if st.button("← Back to trends"):
+        if st.button(t("back_to_trends", lang)):
             st.session_state.scrolled_to_analysis = False
             del st.session_state.selected_trend
             st.rerun()
 
     # -------- PHASE 2: Run Analysis --------
-    with st.spinner("🔍 Researching across sources..."):
-        with st.status("Pulling signals from 6 sources...", expanded=True) as status:
-            st.write("📈 Google Trends...")
+    with st.spinner(t("searching", lang)):
+        with st.status(t("pulling_signals", lang), expanded=True) as status:
+            st.write(t("status_google", lang))
             trends_data = fetch_google_trends(trend.get("search_terms", []), use_cache=True)
 
-            st.write("📢 Competitor ads (Meta Ad Library)...")
+            st.write(t("status_meta", lang))
             meta_data = get_meta_ad_signals(trend["id"])
 
-            st.write("🛒 Marketplace rankings (Myntra/Ajio)...")
+            st.write(t("status_marketplace", lang))
             marketplace_data = get_marketplace_data(trend["id"])
 
-            st.write("📦 Meesho (price-sensitive, tier-2/3/4)...")
+            st.write(t("status_meesho", lang))
             meesho_data = get_meesho_data(trend["id"])
 
-            st.write("✨ Nykaa Fashion (premium trickle-down)...")
+            st.write(t("status_nykaa", lang))
             nykaa_data = get_nykaa_data(trend["id"])
 
-            st.write("💬 Customer review signals...")
+            st.write(t("status_reviews", lang))
             review_data = get_review_signals(trend["id"])
 
-            status.update(label="Synthesizing evidence with AI...", state="running")
+            status.update(label=t("synthesizing", lang), state="running")
             synthesis = synthesize(trend, trends_data, meta_data, marketplace_data,
-                                   review_data, meesho_data, nykaa_data)
-            status.update(label="Analysis complete", state="complete")
+                                   review_data, meesho_data, nykaa_data, lang=lang)
+            status.update(label=t("analysis_complete", lang), state="complete")
 
-    # -------- Results Display --------
     st.markdown("---")
 
     # Summary
-    st.subheader("Summary")
-    st.markdown(f"> {synthesis.get('summary', 'No summary available.')}")
+    st.subheader(t("summary", lang))
+    st.markdown(f"> {synthesis.get('summary', t('no_summary', lang))}")
     if synthesis.get("_note"):
         st.caption(f"⚠️ {synthesis['_note']}")
     if synthesis.get("_deepseek_error"):
@@ -139,7 +153,6 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
 
     # Source quality at a glance
     gt_momentum = trends_data.get("momentum_score", 0)
-    gt_live = trends_data.get("live", False)
     meta_competitors = len(meta_data.get("competitors_backing_this_trend", []))
     meta_max_days = max((c.get("ad_running_days", 0) for c in meta_data.get("competitors_backing_this_trend", [])), default=0)
     ms_units = meesho_data.get("total_units_sold", 0)
@@ -168,16 +181,16 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                 f"<div style='color:#374151;'>{value}</div></div>",
                 unsafe_allow_html=True
             )
-    st.caption("Quality indicators per source. Green = strong signal. Orange = moderate. Grey = weak/absent.")
+    st.caption(t("quality_caption", lang))
 
     st.markdown("---")
 
     # Evidence For / Against
     col1, col2 = st.columns(2)
     with col1:
-        st.subheader("✅ Evidence For")
+        st.subheader(t("evidence_for", lang))
         for_count = len(synthesis.get("for", []))
-        st.caption(f"{for_count} signals supporting this bet")
+        st.caption(t("signals_supporting", lang).replace("{count}", str(for_count)))
         for item in synthesis.get("for", []):
             strength_color = "#16a34a" if item["strength"] == "strong" else "#ca8a04" if item["strength"] == "moderate" else "#6b7280"
             with st.container(border=True):
@@ -185,9 +198,9 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                 st.write(item["signal"])
 
     with col2:
-        st.subheader("❌ Evidence Against")
+        st.subheader(t("evidence_against", lang))
         against_count = len(synthesis.get("against", []))
-        st.caption(f"{against_count} signals warning against this bet")
+        st.caption(t("signals_warning", lang).replace("{count}", str(against_count)))
         for item in synthesis.get("against", []):
             strength_color = "#dc2626" if item["strength"] == "strong" else "#d97706" if item["strength"] == "moderate" else "#6b7280"
             with st.container(border=True):
@@ -198,7 +211,7 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
     disagreements = synthesis.get("disagreements", [])
     if disagreements:
         st.markdown("---")
-        st.subheader("⚡ Sources Disagree On")
+        st.subheader(t("disagree_on", lang))
         for d in disagreements:
             with st.container(border=True):
                 st.warning(f"**{d['topic']}**")
@@ -207,12 +220,11 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
 
     # Bet Sizing Recommendation
     st.markdown("---")
-    st.subheader("💰 Bet Sizing Recommendation")
+    st.subheader(t("bet_sizing", lang))
 
-    # Trust weight sliders (collapsible)
     source_weights = {}
-    with st.expander("⚖️ Adjust source trust (how much do you believe each source?)", expanded=False):
-        st.caption("Default: all sources weighted equally. Increase weight for sources you trust more, decrease for ones you think may mislead. The score updates automatically.")
+    with st.expander(t("trust_expander", lang), expanded=False):
+        st.caption(t("trust_caption", lang))
         tw_col1, tw_col2 = st.columns(2)
         default_sources = [
             "Google Trends", "Competitor Ads (Meta)", "Myntra/Ajio",
@@ -249,9 +261,8 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
         else:
             st.error(f"## {sizing}")
 
-        st.metric("Confidence Score", f"{score}/{bet['max_score']}")
+        st.metric(t("confidence_score", lang), f"{score}/{bet['max_score']}")
 
-        # Visual gauge
         gauge_html = f"""
         <div style="background:#e5e7eb;border-radius:4px;height:8px;margin:8px 0;position:relative;">
           <div style="background:{'#16a34a' if score >= 7.5 else '#2563eb' if score >= 5 else '#ca8a04' if score >= 3 else '#d97706' if score >= 2 else '#dc2626'};border-radius:4px;height:8px;width:{score * 10}%;"></div>
@@ -264,22 +275,21 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
 
         if bet.get("threshold_next"):
             st.caption(f"📏 {bet['threshold_next']}")
-        st.caption(f"Price band: {bet['price_band']}")
-        st.caption(f"Season: {bet['season']}")
-        st.caption(f"Risk level: {bet['risk_level']}")
+        st.caption(f"{t('price_band', lang)} {bet['price_band']}")
+        st.caption(f"{t('season_label', lang)} {bet['season']}")
+        st.caption(f"{t('risk_level', lang)} {bet['risk_level']}")
         if bet.get("source_weights_used"):
-            st.caption("⚖️ Custom source weights applied")
+            st.caption(t("custom_weights_applied", lang))
 
     with bet_col2:
         with st.container(border=True):
-            st.markdown("**Why this call**")
+            st.markdown(t("why_this_call", lang))
             st.write(bet["rationale"])
         with st.container(border=True):
-            st.markdown("**What to do**")
+            st.markdown(t("what_to_do", lang))
             st.write(bet["suggested_action"])
 
-    # Scoring breakdown (collapsible)
-    with st.expander("📐 See scoring breakdown", expanded=False):
+    with st.expander(t("scoring_breakdown", lang), expanded=False):
         comps = bet["components"]
         st.write(f"- Convergence score: {comps['convergence_score']} (from {comps['strong_for_count']} strong + {comps['moderate_for_count']} moderate sources for, {comps['strong_against_count']} strong + {comps['moderate_against_count']} moderate sources against)")
         st.write(f"- Disagreement penalty: -{comps['disagreement_penalty']} (from {comps['disagreement_count']} source conflicts)")
@@ -289,7 +299,7 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
 
     # What to watch
     st.markdown("---")
-    st.subheader("🔭 What to Watch Next")
+    st.subheader(t("watch_next", lang))
     for item in synthesis.get("watch_next", []):
         st.markdown(f"- {item}")
 
@@ -297,15 +307,15 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
     missing = synthesis.get("missing_evidence", [])
     if missing:
         st.markdown("---")
-        st.subheader("❓ Missing Evidence")
-        st.caption("What would change the call if we knew it:")
+        st.subheader(t("missing_evidence", lang))
+        st.caption(t("missing_evidence_caption", lang))
         for item in missing:
             st.markdown(f"- {item}")
 
-    # Source Details (collapsible)
+    # Source Details
     st.markdown("---")
-    st.subheader("📋 Source Details")
-    st.caption("Inspect raw signals. Every recommendation links back to these.")
+    st.subheader(t("source_details", lang))
+    st.caption(t("source_details_caption", lang))
 
     col_a, col_b, col_c = st.columns(3)
     with col_a:
@@ -357,9 +367,9 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
                     ],
                     hide_index=True, use_container_width=True
                 )
-                st.metric("Total Resellers", meesho_data.get("total_resellers", 0))
-                st.metric("Total Units", f"{meesho_data.get('total_units_sold', 0):,}")
-                st.caption(f"Regions covered: {', '.join(meesho_data.get('regions_covered', []))}")
+                st.metric(t("metric_resellers", lang), meesho_data.get("total_resellers", 0))
+                st.metric(t("metric_units", lang), f"{meesho_data.get('total_units_sold', 0):,}")
+                st.caption(f"{t('regions_covered', lang)} {', '.join(meesho_data.get('regions_covered', []))}")
             else:
                 st.caption("No matching products on Meesho.")
     with col_c:
@@ -400,13 +410,10 @@ if "selected_trend" in st.session_state and st.session_state.selected_trend:
             if trend_notes:
                 st.caption(f"📝 {trend_notes}")
 
-    # -------- Empty State (no trend selected) --------
 else:
     st.markdown("---")
-    st.info("👆 Select a trend above to run a full evidence analysis with bet sizing recommendation.")
+    st.info(t("empty_state", lang))
 
 # -------- Footer --------
 st.markdown("---")
-st.caption("""**How to read this:** This tool organizes evidence — it does not make the decision for you.
-Each source can mislead. Competitor ads may target a different customer. Marketplace ranks may reflect discounting, not demand.
-Search trends may be inspiration, not purchase intent. Use this to reason through uncertainty, not replace it.""")
+st.caption(t("footer", lang))

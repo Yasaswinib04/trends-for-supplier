@@ -11,7 +11,7 @@ try:
 except ImportError:
     pass
 
-from .prompts import SYNTHESIS_SYSTEM_PROMPT, DEEPSEEK_MODEL, DEEPSEEK_BASE_URL
+from .prompts import get_system_prompt, DEEPSEEK_MODEL, DEEPSEEK_BASE_URL
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 
@@ -32,7 +32,7 @@ def _get_client():
 
 
 def synthesize(trend, trends_data, meta_data, marketplace_data, review_data,
-               meesho_data=None, nykaa_data=None):
+               meesho_data=None, nykaa_data=None, lang="en"):
     client = _get_client()
 
     user_prompt = f"""## Trend Under Evaluation
@@ -68,7 +68,7 @@ Output the structured JSON as specified."""
             response = client.chat.completions.create(
                 model=DEEPSEEK_MODEL,
                 messages=[
-                    {"role": "system", "content": SYNTHESIS_SYSTEM_PROMPT},
+                    {"role": "system", "content": get_system_prompt(lang)},
                     {"role": "user", "content": user_prompt},
                 ],
                 temperature=0.3,

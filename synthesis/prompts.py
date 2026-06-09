@@ -4,7 +4,7 @@
 DEEPSEEK_MODEL = "deepseek-chat"
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
-SYNTHESIS_SYSTEM_PROMPT = """You are an expert fashion retail analyst helping a category buyer at a value-fashion retailer in India.
+SYNTHESIS_SYSTEM_PROMPT_TEMPLATE = """You are an expert fashion retail analyst helping a category buyer at a value-fashion retailer in India.
 
 Your job is NOT to make the final buy decision. Your job is to organize evidence from multiple sources into a clear, structured analysis that helps the buyer reason through uncertainty.
 
@@ -71,8 +71,29 @@ The JSON object must have exactly these keys with these exact types:
   ]
 }
 
-All array fields (for, against, disagreements, missing_evidence, watch_next) must be arrays even if empty. All string values must use double quotes."""
+All array fields (for, against, disagreements, missing_evidence, watch_next) must be arrays even if empty. All string values must use double quotes.
 
-# Fallback prompt used when the DeepSeek API is unavailable — same structure,
-# but the rule-based engine in engine.py handles synthesis instead.
-FALLBACK_SYNTHESIS_NOTE = "Rule-based fallback active. JSON structure is identical to AI output."
+## Response Language
+You MUST write ALL string values (summary, signal, topic, detail, missing_evidence items, watch_next items) in {language_full}. Source names (source, source_a, source_b keys) and the confidence_assessment value ("high"/"moderate"/"low") must remain in English.
+{script_instruction}"""
+
+
+_SCRIPT_INSTRUCTIONS = {
+    "hi": "Use Devanagari script for all Hindi text.",
+    "te": "Use Telugu script for all Telugu text.",
+    "ta": "Use Tamil script for all Tamil text.",
+}
+
+_LANGUAGE_NAMES = {
+    "hi": "Hindi",
+    "te": "Telugu",
+    "ta": "Tamil",
+}
+
+
+def get_system_prompt(lang="en"):
+    script = _SCRIPT_INSTRUCTIONS.get(lang, "")
+    lang_name = _LANGUAGE_NAMES.get(lang, "English")
+    prompt = SYNTHESIS_SYSTEM_PROMPT_TEMPLATE.replace("{language_full}", lang_name)
+    prompt = prompt.replace("{script_instruction}", script)
+    return prompt
