@@ -100,8 +100,8 @@
     {% if synth.source_quality %}
     <div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-4">
         <div class="text-xs font-semibold uppercase mb-2">Source Quality</div>
-        <div class="grid grid-cols-3 gap-3">
-            {% for src in ['nykaa', 'myntra', 'meesho'] %}
+        <div class="grid grid-cols-4 gap-3">
+            {% for src in ['nykaa', 'myntra', 'meesho', 'internal'] %}
             {% set q = synth.source_quality.get(src, {}) %}
             <div class="text-xs">
                 <span class="font-semibold">{{ src | capitalize }}:</span>
@@ -139,6 +139,25 @@
                     <div class="text-on-surface-variant font-mono text-[10px]">{{ src[2] }}</div>
                 </div>
                 {% endfor %}
+
+                <!-- Internal POS Card -->
+                {% if internal and internal.has_internal_data %}
+                <div class="bg-surface-container-lowest border-2 border-primary rounded p-2 text-xs">
+                    <div class="font-semibold text-primary">🏢 Internal POS</div>
+                    <div class="text-on-surface">{{ internal.similar_past_sku }}</div>
+                    <div class="font-mono text-[10px] mt-0.5">
+                        <span class="{% if internal.outcome == 'success' %}text-success{% elif internal.outcome == 'underperformed' %}text-error{% else %}text-tertiary{% endif %} font-bold">{{ internal.outcome | upper }}</span>
+                        · {{ internal.sell_through_pct }}% sell-thru (target: {{ internal.target_sell_through_pct }}%)
+                    </div>
+                    <div class="text-on-surface-variant mt-1 leading-tight italic">"{{ internal.key_insight }}"</div>
+                </div>
+                {% else %}
+                <div class="bg-surface-container-lowest border border-dashed border-outline-variant rounded p-2 text-xs">
+                    <div class="font-semibold text-on-surface-variant">🏢 Internal POS</div>
+                    <div class="text-on-surface-variant">No prior buy history</div>
+                    <div class="text-on-surface-variant font-mono text-[10px]">{{ internal.note if internal else 'First-time category entry.' }}</div>
+                </div>
+                {% endif %}
             </div>
         </div>
 

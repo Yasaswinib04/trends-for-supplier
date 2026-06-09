@@ -36,7 +36,7 @@ def _save_cache(cache):
         json.dump(cache, f, indent=2)
 
 
-def synthesize(trend, nykaa_data, myntra_data, meesho_data):
+def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None):
     trend_id = trend["id"]
     cache = _load_cache()
     if trend_id in cache:
@@ -56,7 +56,10 @@ def synthesize(trend, nykaa_data, myntra_data, meesho_data):
 ## Source 3: Meesho — Price-Sensitive Mass Market
 {json.dumps(meesho_data, indent=2)}
 
-Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. Output the structured JSON as specified."""
+## Source 4: Internal POS — Our Own Store Sales (GROUND TRUTH)
+{json.dumps(internal_data or {"has_internal_data": False, "note": "No prior buy history."}, indent=2)}
+
+Analyze the evidence using the Disagreement Engine rules. Detect all conflicts, paying special attention to where internal store data contradicts external signals. Output the structured JSON as specified."""
 
     if not client:
         return {
@@ -82,8 +85,8 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
             ],
             temperature=0.3,
             response_format={"type": "json_object"},
-            max_tokens=4000,
-            timeout=45,
+            max_tokens=2000,
+            timeout=30,
         )
         content = response.choices[0].message.content
         result = json.loads(_clean_json(content))

@@ -1,5 +1,6 @@
 import json
 import os
+import threading
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify
 
@@ -13,6 +14,7 @@ from sources.marketplace import get_marketplace_data
 from sources.meesho import get_meesho_data
 from sources.nykaa import get_nykaa_data
 from sources.reviews import get_review_signals
+from sources.internal_pos import get_internal_pos_data
 from synthesis.engine import synthesize, log_override, get_override_stats, init_telemetry
 
 app = Flask(__name__)
@@ -37,6 +39,29 @@ DECISION_MAP = {
 PAST_BETS_FILE = DATA_DIR / "past_bets.json"
 with open(PAST_BETS_FILE) as f:
     PAST_BETS = json.load(f)
+
+_synth_cache = {}
+
+# Pre-cache all trend syntheses in background thread on startup
+def _precache_all():
+    print("🔄 Pre-caching syntheses for all 8 trends...")
+    for i, t in enumerate(TRENDS):
+        if t["id"] in _synth_cache:
+            continue
+        try:
+            ny  = get_nykaa_data(t["id"])
+            my  = get_marketplace_data(t["id"])
+            ms  = get_meesho_data(t["id"])
+            pos = get_internal_pos_data(t["id"])
+            synth = synthesize(t, ny, my, ms, pos)
+            _synth_cache[t["id"]] = synth
+            print(f"  ✅ {i+1}/8 {t['name'][:40]}")
+        except Exception as e:
+            print(f"  ⚠️ {i+1}/8 {t['name'][:40]}: {str(e)[:60]}")
+    print("✅ Pre-cache complete.")
+
+_precache_thread = threading.Thread(target=_precache_all, daemon=True)
+_precache_thread.start()
 
 
 @app.route("/")
@@ -72,8 +97,6 @@ def decision_board():
         action_items=action_items, watching=watching,
         scanned_trends=scanned, trends=TRENDS)
 
-_synth_cache = {}
-
 @app.route("/briefing/<trend_id>")
 def briefing(trend_id):
     trend = next((t for t in TRENDS if t["id"] == trend_id), None)
@@ -84,13 +107,14 @@ def briefing(trend_id):
     myntra = get_marketplace_data(trend_id)
     meesho = get_meesho_data(trend_id)
     reviews = get_review_signals(trend_id)
+    internal = get_internal_pos_data(trend_id)
     prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
     past = [b for b in PAST_BETS if b.get("current_trend_id") == trend_id]
 
     # Render instantly with loading state. JS will call /api/briefing/{id}
     return render_template("briefing_loading.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
-        reviews=reviews, prio=prio, label=label, color=color, past_bets=past)
+        reviews=reviews, internal=internal, prio=prio, label=label, color=color, past_bets=past)
 
 @app.route("/api/briefing/<trend_id>")
 def api_briefing(trend_id):
@@ -104,7 +128,8 @@ def api_briefing(trend_id):
     nykaa  = get_nykaa_data(trend_id)
     myntra = get_marketplace_data(trend_id)
     meesho = get_meesho_data(trend_id)
-    synth = synthesize(trend, nykaa, myntra, meesho)
+    internal = get_internal_pos_data(trend_id)
+    synth = synthesize(trend, nykaa, myntra, meesho, internal)
     _synth_cache[trend_id] = synth
     return jsonify(synth)
 
