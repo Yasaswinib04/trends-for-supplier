@@ -1,10 +1,19 @@
 import json
 import os
+import re
 from openai import OpenAI
 from pathlib import Path
 from .prompts import SYNTHESIS_SYSTEM_PROMPT, DEEPSEEK_MODEL, DEEPSEEK_BASE_URL
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+def _clean_json_response(raw: str) -> str:
+    stripped = raw.strip()
+    match = re.search(r"\{.*\}", stripped, re.DOTALL)
+    if match:
+        return match.group(0)
+    return stripped
 
 
 def _get_client():
@@ -59,7 +68,7 @@ Output the structured JSON as specified."""
                 max_tokens=2500,
             )
             content = response.choices[0].message.content
-            result = json.loads(content)
+            result = json.loads(_clean_json_response(content))
         except Exception as e:
             result = _rule_based_fallback(
                 trend, trends_data, meta_data, marketplace_data,
