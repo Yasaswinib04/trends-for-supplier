@@ -139,6 +139,7 @@
         <!-- Reviews -->
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-6">
             <div class="text-sm font-semibold mb-3">💬 Customer Sentiment</div>
+            {% if reviews and reviews.available %}
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <div class="text-xs font-semibold text-success mb-2">👍 TOP PRAISE</div>
@@ -153,6 +154,9 @@
                     {% endfor %}
                 </div>
             </div>
+            {% else %}
+            <div class="text-sm text-on-surface-variant">No review data available for this trend yet.</div>
+            {% endif %}
         </div>
     </div>
 </div>
