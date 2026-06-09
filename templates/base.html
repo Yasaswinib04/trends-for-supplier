@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>{% block title %}Disagreement Engine{% endblock %}</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                "primary": "#004ccd", "primary-container": "#0f62fe",
+                "on-primary": "#fff", "background": "#faf8ff",
+                "surface": "#faf8ff", "surface-container": "#ecedfa",
+                "surface-container-low": "#f2f3ff",
+                "surface-container-lowest": "#fff",
+                "on-surface": "#191b24", "on-surface-variant": "#424656",
+                "outline": "#737687", "outline-variant": "#c3c6d8",
+                "error": "#ba1a1a", "error-container": "#ffdad6",
+                "on-error-container": "#93000a",
+                "tertiary": "#9e3100", "tertiary-container": "#c84000",
+                "tertiary-fixed": "#ffdbd0",
+                "success": "#006e1c", "success-container": "#94f990",
+                "stagnant": "#855300", "stagnant-container": "#ffddb3",
+            },
+            fontFamily: {
+                "sans": ["IBM Plex Sans"],
+                "mono": ["IBM Plex Mono"],
+            }
+        }
+    }
+}
+</script>
+<style>
+.material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+.material-symbols-outlined.filled { font-variation-settings: 'FILL' 1; }
+body { font-family: 'IBM Plex Sans', sans-serif; }
+.dd-open { display: flex !important; }
+.dd-panel-open { transform: translateX(0) !important; }
+</style>
+{% block head %}{% endblock %}
+</head>
+<body class="bg-background text-on-surface min-h-screen flex">
+{% block sidebar %}
+<nav class="hidden lg:flex flex-col w-56 border-r border-outline-variant bg-surface shrink-0 h-screen sticky top-0 p-4 gap-2">
+    <div class="mb-4"><div class="text-lg font-bold text-primary">Disagreement Engine</div></div>
+    <a href="/" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📥 Triage</a>
+    <a href="/market-view" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/market-view' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📈 Market View</a>
+    <a href="/sourcing" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/sourcing' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📦 Sourcing</a>
+</nav>
+{% endblock %}
+<main class="flex-1 overflow-y-auto">
+{% block content %}{% endblock %}
+</main>
+</body>
+</html>

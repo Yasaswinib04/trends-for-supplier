@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Triage — Disagreement Engine{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
+        <div>
+            <h1 class="text-3xl font-semibold text-on-surface mb-1">Triage Inbox</h1>
+            <p class="text-sm text-on-surface-variant">Conflict-first trend analysis. Sources disagree → you decide.</p>
+        </div>
+        <div class="text-xs text-on-surface-variant">Sort by: <select class="border border-outline-variant rounded px-2 py-1 bg-surface text-sm"><option>Action Urgency</option><option>Margin Risk</option></select></div>
+    </div>
+
+    <!-- Action Required -->
+    <section class="mb-8">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined filled text-error text-lg">warning</span>
+            <h2 class="text-lg font-medium">Action Required Today</h2>
+            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ critical|length }}</span>
+        </div>
+        <div class="space-y-2">
+            {% for t in critical %}
+            <a href="/briefing/{{ t.id }}" class="block bg-surface-container-lowest border border-outline-variant rounded p-4 hover:border-primary transition-colors relative overflow-hidden group no-underline">
+                <div class="absolute left-0 top-0 bottom-0 w-1 bg-error"></div>
+                <div class="pl-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="bg-error-container text-on-error-container px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border border-error">CRITICAL</span>
+                            <h3 class="text-lg font-medium text-on-surface">{{ t.name }}</h3>
+                        </div>
+                        <div class="flex flex-wrap gap-3 text-[13px] text-on-surface-variant">
+                            <span>{% if "₹699" in t.price_band or "₹799" in t.price_band %}Margin Risk: High{% else %}Stockout: Pending{% endif %}</span>
+                            <span class="text-outline-variant">|</span>
+                            <span class="font-mono text-xs">{{ t.signal_summary[:60] }}</span>
+                        </div>
+                    </div>
+                    <span class="text-primary text-sm font-semibold whitespace-nowrap group-hover:underline">Briefing →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <!-- On the Radar -->
+    <section>
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined filled text-tertiary-container text-lg">schedule</span>
+            <h2 class="text-lg font-medium">On the Radar</h2>
+            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ others|length }}</span>
+        </div>
+        <div class="space-y-2">
+            {% for t in others %}
+            {% set border = "#c84000" if t.priority == "emerging" else "#c3c6d8" %}
+            {% set badge_bg = "#ffdbd0" if t.priority == "emerging" else "#ecedfa" %}
+            {% set badge_text = "#390c00" if t.priority == "emerging" else "#424656" %}
+            {% set badge_border = "#9e3100" if t.priority == "emerging" else "#c3c6d8" %}
+            <a href="/briefing/{{ t.id }}" class="block bg-surface-container-lowest border border-outline-variant rounded p-4 hover:border-primary transition-colors relative overflow-hidden group no-underline">
+                <div class="absolute left-0 top-0 bottom-0 w-1" style="background:{{ border }}"></div>
+                <div class="pl-3 flex flex-col md:flex-row md:items-center justify-between gap-3">
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="px-2 py-0.5 rounded text-[11px] font-semibold tracking-wide border" style="background:{{ badge_bg }};color:{{ badge_text }};border-color:{{ badge_border }};">{{ t.label }}</span>
+                            <h3 class="text-lg font-medium text-on-surface">{{ t.name }}</h3>
+                        </div>
+                        <div class="flex flex-wrap gap-3 text-[13px] text-on-surface-variant">
+                            <span>{{ t.price_band }} · {{ t.season }}</span>
+                            <span class="text-outline-variant">|</span>
+                            <span class="font-mono text-xs">{{ t.signal_summary[:55] }}</span>
+                        </div>
+                    </div>
+                    <span class="text-on-surface-variant text-sm font-semibold whitespace-nowrap group-hover:text-primary">Briefing →</span>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
