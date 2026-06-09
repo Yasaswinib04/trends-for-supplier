@@ -77,21 +77,22 @@ app.py (Streamlit UI)
 
 ## Bet Sizing Logic
 
-Transparent, not black-box:
+Transparent, not black-box. All weights and thresholds are visible to the buyer:
 
 ```
 score = convergence_score - disagreement_penalty
 
-convergence_score = strong_for × 2.5 + moderate_for × 1.5 - strong_against × 2.0
+convergence_score = strong_for × 2.5 + moderate_for × 1.5
+                  - strong_against × 2.5 - moderate_against × 0.75
 disagreement_penalty = disagreement_count × 1.5
 
-IF score >= 7.0  →  DEEP BUY    (60-70% open-to-buy)
-IF score >= 4.5  →  MODERATE    (30-50%, re-orderable fabric)
-IF score >= 2.5  →  TRIAL       (300-500 units, top 20 stores)
+IF score >= 7.5  →  DEEP BUY    (60-70% open-to-buy)
+IF score >= 5.0  →  MODERATE    (30-50%, re-orderable fabric)
+IF score >= 3.0  →  TRIAL       (300-500 units, top 20 stores)
 ELSE             →  MONITOR     (no buy, re-check in 2-4 weeks)
 ```
 
-The buyer sees the component breakdown (convergence, penalty, source counts) and can override. Thresholds are documented, not hidden.
+The buyer sees the component breakdown (convergence, penalty, source counts for/against) and can override. Thresholds are documented, not hidden. Weak signals contribute to the synthesis summary but do not tilt the convergence score — only strong and moderate evidence counts.
 
 ---
 
