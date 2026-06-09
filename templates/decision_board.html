@@ -5,7 +5,7 @@
     <div class="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
         <div>
             <h1 class="text-3xl font-semibold text-on-surface mb-1">Decision Board</h1>
-            <p class="text-sm text-on-surface-variant">Conflicts surfaced from 3 contrasting sources. Prioritized by disagreement severity — biggest gaps need decisions first.</p>
+            <p class="text-sm text-on-surface-variant">Ranked by decision risk — what's most expensive to get wrong. Conflicts, fabric commitments, and seasonal windows push items higher.</p>
         </div>
         <div class="text-xs text-on-surface-variant">Sort by:
             <select id="sort-select" class="border border-outline-variant rounded px-2 py-1 bg-surface text-sm" onchange="sortCards()">
@@ -37,6 +37,8 @@
                             <span>Sources disagree: {% if t.id == 'chanderi-straight' %}Premium demand vs mass-market absence{% else %}Strong demand vs narrow window{% endif %}</span>
                             <span class="text-outline-variant">|</span>
                             <span class="font-mono text-xs">{{ t.price_band }} · {{ t.season }}</span>
+                            <span class="text-outline-variant">|</span>
+                            <span class="text-[11px] text-tertiary">{% if t.id == 'chanderi-straight' %}⚠️ Fabric commitment · irreversible{% else %}⚠️ Seasonal window · festive cutoff{% endif %}</span>
                         </div>
                     </div>
                     <span class="text-primary text-sm font-semibold whitespace-nowrap group-hover:underline">Analyze →</span>
@@ -71,6 +73,10 @@
                             <span>{{ t.price_band }} · {{ t.season }}</span>
                             <span class="text-outline-variant">|</span>
                             <span class="font-mono text-xs">{{ t.signal_summary[:55] }}</span>
+                            {% if t.risk_score is defined and t.risk_score >= 3 %}
+                            <span class="text-outline-variant">|</span>
+                            <span class="text-[11px] text-tertiary">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
+                            {% endif %}
                         </div>
                     </div>
                     <span class="text-on-surface-variant text-sm font-semibold whitespace-nowrap group-hover:text-primary">Analyze →</span>

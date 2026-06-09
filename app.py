@@ -34,17 +34,38 @@ DECISION_MAP = {
     "linen-chinese-collar": ("tracking", "TRACKING", "gray"),
 }
 
+PAST_BETS_FILE = DATA_DIR / "past_bets.json"
+with open(PAST_BETS_FILE) as f:
+    PAST_BETS = json.load(f)
+
+
 @app.route("/")
 def decision_board():
     trends_with_status = []
     for t in TRENDS:
         priority, label, color = DECISION_MAP.get(t["id"], ("tracking", "TRACKING", "gray"))
-        trends_with_status.append({**t, "priority": priority, "label": label, "color": color})
+
+        # Rank by decision risk, not signal movement
+        # Decision risk = conflict severity + reversibility + window pressure
+        is_high_conflict = priority == "action"
+        is_festive = "Festive" in t.get("season", "") or "Wedding" in t.get("season", "")
+        is_commit_fabric = "Chanderi" in t["name"] or "Organza" in t["name"] or "Linen" in t["name"]
+        is_reorderable = "Cotton" in t["name"] or "Rayon" in t.get("fabric", "")
+
+        risk_score = 0
+        if is_high_conflict: risk_score += 3
+        if is_festive: risk_score += 2
+        if is_commit_fabric: risk_score += 2
+        if is_reorderable: risk_score -= 1
+
+        trends_with_status.append({**t, "priority": priority, "label": label,
+            "color": color, "risk_score": risk_score})
+
+    # Sort by decision risk (highest first)
+    trends_with_status.sort(key=lambda x: -x["risk_score"])
 
     action_items = [t for t in trends_with_status if t["priority"] == "action"]
     watching = [t for t in trends_with_status if t["priority"] != "action"]
-
-    # Try to surface live search trends as supplement
     scanned = _scan_live_trends()
 
     return render_template("decision_board.html",
@@ -65,9 +86,13 @@ def briefing(trend_id):
 
     prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
 
+    # Load relevant past bets
+    past = [b for b in PAST_BETS if b.get("current_trend_id") == trend_id]
+
     return render_template("briefing.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
-        reviews=reviews, synth=synth, prio=prio, label=label, color=color)
+        reviews=reviews, synth=synth, prio=prio, label=label, color=color,
+        past_bets=past)
 
 
 def _scan_live_trends():

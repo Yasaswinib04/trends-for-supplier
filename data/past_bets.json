@@ -1,0 +1,54 @@
+[
+  {
+    "id": "past-chanderi-2024",
+    "trend_name": "Embroidered Chanderi Straight Kurti",
+    "current_trend_id": "chanderi-straight",
+    "season": "Festive 2024",
+    "outcome": "underperformed",
+    "sell_through": 42,
+    "target": 60,
+    "margin": 38,
+    "main_issue": "Wash complaints drove 18% returns. Customers reported fabric transparency and dry-clean-only friction.",
+    "buyer_decision": "Overrode MONITOR to commit — result validated initial caution.",
+    "key_learning": "Sheer Chanderi needs built-in lining. Value-fashion customers dislike dry-clean-only garments at ₹699-899 price point."
+  },
+  {
+    "id": "past-blockprint-2024",
+    "trend_name": "Block Print Cotton A-Line Kurti",
+    "current_trend_id": "blockprint-cotton",
+    "season": "Summer 2024",
+    "outcome": "success",
+    "sell_through": 72,
+    "target": 55,
+    "margin": 44,
+    "main_issue": "None significant. Slight color bleed in first wash — customer education resolved most complaints.",
+    "buyer_decision": "TRIAL → expanded after Week 2 sell-through data.",
+    "key_learning": "Block print cotton at ₹399-599 sells well in tier-2/3 markets. Meesho presence is a leading indicator."
+  },
+  {
+    "id": "past-organza-2024",
+    "trend_name": "Organza Embroidered Kurti",
+    "current_trend_id": "organza-embroidered",
+    "season": "Wedding 2024",
+    "outcome": "learning",
+    "sell_through": 55,
+    "target": 60,
+    "margin": 52,
+    "main_issue": "Limited wear occasions. Strong margins but narrow buyer interest — bridal/wedding only.",
+    "buyer_decision": "Bought moderate, sold at full price but slower than expected.",
+    "key_learning": "Occasion-wear has a narrower window than festive-wear. Pre-Diwali launch is better than year-round."
+  },
+  {
+    "id": "past-linen-2024",
+    "trend_name": "Linen Straight Kurti",
+    "current_trend_id": "linen-chinese-collar",
+    "season": "Summer 2024",
+    "outcome": "underperformed",
+    "sell_through": 31,
+    "target": 55,
+    "margin": 35,
+    "main_issue": "Urban adoption stalled due to price sensitivity. Demand concentrated in tier-2 coastal but insufficient volume.",
+    "buyer_decision": "TRIAL — failed to expand. Geographic mismatch between product and core customer base.",
+    "key_learning": "Linen at ₹699-999 is aspirational for tier-2 but overpriced for value-fashion core. Test geography before committing."
+  }
+]
