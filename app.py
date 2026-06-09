@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import json
 import sys
 from pathlib import Path
@@ -74,12 +75,26 @@ if selected_idx is not None:
 if "selected_trend" in st.session_state and st.session_state.selected_trend:
     trend = st.session_state.selected_trend
 
+    # Auto-scroll to analysis on load
+    st.markdown('<div id="analysis-anchor"></div>', unsafe_allow_html=True)
+    if not st.session_state.get("scrolled_to_analysis"):
+        components.html("""
+        <script>
+            setTimeout(function() {
+                var el = document.getElementById('analysis-anchor');
+                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+            }, 400);
+        </script>
+        """, height=0)
+        st.session_state.scrolled_to_analysis = True
+
     st.markdown("---")
     st.header(f"Deep Dive: {trend['name']}")
 
     back_col, _ = st.columns([1, 5])
     with back_col:
         if st.button("← Back to trends"):
+            st.session_state.scrolled_to_analysis = False
             del st.session_state.selected_trend
             st.rerun()
 
