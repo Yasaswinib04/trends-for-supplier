@@ -2,6 +2,12 @@
 
 A decision-support tool for category buyers at value-fashion retailers in India. It watches 4 data sources, detects where they **disagree**, and forces the buyer to make a judgment call — not by hiding uncertainty behind a score, but by making the conflicts visible.
 
+## Sharp Edge: The Disagreement Engine
+
+This product does NOT average signals into a confidence score. When Nykaa shows strong premium demand but Meesho shows zero reseller activity, the UI doesn't lower a number — it flags `[CONFLICT DETECTED: HIGH]` and asks the buyer: *"Is this aspirational-only, or can it translate to ₹399-799?"*
+
+Every claim is traceable to raw data. Every source gets a quality grade (🟢 🟡 🔴). Every conflict has explicit **Proves** / **Cannot prove** tags so the buyer knows exactly what each signal can and cannot conclude. The system says "I don't know" when evidence is thin, and surfaces past store outcomes as calibration.
+
 ## Demo
 
 ```bash
@@ -156,4 +162,20 @@ The Disagreement Engine doesn't eliminate wrong bets. It makes them **cheaper** 
 1. **Chrome Extension** ("Bring Your Own Signal"): Let buyers clip trends from Instagram/Pinterest/Myntra while browsing and send them directly to the engine. Solves the real-time data problem without building fragile web scrapers.
 2. **Live Google Trends Integration**: Replace the cached search trend data with live API calls to detect rising search terms as leading indicators.
 3. **Bet Outcome Tracking**: Connect approved bets to actual POS sell-through data 90 days later to create a closed feedback loop.
+
+---
+
+## Sources Used
+
+| Source | Type | What it proves | What can mislead |
+|---|---|---|---|
+| **Nykaa Fashion** | Cached (manual collection) | Premium willingness-to-pay. Zero-discount = genuine demand. | Urban/metro bias. 90% of value-fashion customers never shop here. |
+| **Myntra/Ajio** | Cached (manual collection) | Organized retail demand velocity, discount levels reveal price-driven vs style-driven demand. | High rank at deep discount ≠ real demand. Stockouts distort ranks. |
+| **Meesho** | Cached (manual collection) | Mass-market tier-2/3/4 demand. Reseller growth = leading indicator. | High discount % is platform behavior (56-63% off MRP is normal). Short reviews, often incentivized. |
+| **Internal POS** | Cached (past outcomes) | Ground truth — what actually sold in your stores, at what margin, with what return rate. | Past outcomes don't guarantee future results. Sample size may be small. |
+| **Google Trends** | Live (pytrends) via cached fallback | Search momentum for kurti terms. Rising queries = early intent. | Search ≠ purchase. Niche terms may show zero data. Vernacular/voice searches missed. |
+| **Meta Ad Library** | Cached (manual collection) | Competitor conviction — who's backing what with paid budget and for how long. | Competitors may be late, copying, or targeting different customers. |
+| **Customer Reviews** | Curated (manual) | Fit, fabric, wash-durability sentiment from actual buyers. | Small samples, not statistically representative. Reviewer demographics may not match. |
+
+**Cached data** is disclosed in the UI with `disclaimer` fields and `last_updated` timestamps. All mock data is clearly labeled. No real-time scraper dependencies — the app runs without hitting any marketplace API.
 4. **Regional Allocation Intelligence**: Use internal POS regional data (e.g., Bandhani works in Gujarat but dies in South India) to recommend store-level allocation, not just go/no-go.
