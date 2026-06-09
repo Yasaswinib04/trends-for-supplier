@@ -99,8 +99,23 @@
         </div>
         <div class="flex gap-2">
             <button class="px-4 py-2 border border-outline text-on-surface text-xs font-semibold rounded hover:bg-surface-container transition-colors uppercase">Modify Specs</button>
-            <button onclick="alert('PO Released! #PO-2024-089A')" class="px-5 py-2 bg-primary text-on-primary text-xs font-semibold rounded hover:opacity-90 transition-colors flex items-center gap-1 uppercase">Release PO <span class="text-sm">🚀</span></button>
+            <button onclick="releasePO()" class="px-5 py-2 bg-primary text-on-primary text-xs font-semibold rounded hover:opacity-90 transition-colors flex items-center gap-1 uppercase">Release PO <span class="text-sm">🚀</span></button>
         </div>
     </div>
 </div>
+
+<!-- PO Confirmation Toast -->
+<div id="po-confirm" style="display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#faf8ff;border:2px solid #006e1c;border-radius:8px;padding:24px 32px;z-index:200;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+    <div style="font-size:48px;margin-bottom:8px;">✅</div>
+    <div class="text-lg font-bold mb-1">PO Released</div>
+    <div class="text-xs font-mono text-on-surface-variant mb-3">#PO-2024-089A · Vardhman Textiles Ltd.</div>
+    <div class="text-sm text-on-surface">24,300 Units · ₹18.50/unit · ETA 45 Days</div>
+    <button onclick="document.getElementById('po-confirm').style.display='none'" class="mt-4 px-4 py-2 bg-primary text-white text-xs font-semibold rounded hover:opacity-90">Close</button>
+</div>
+
+<script>
+function releasePO() {
+    document.getElementById('po-confirm').style.display = 'block';
+}
+</script>
 {% endblock %}

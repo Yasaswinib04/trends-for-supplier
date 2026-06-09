@@ -7,7 +7,13 @@
             <h1 class="text-3xl font-semibold text-on-surface mb-1">Triage Inbox</h1>
             <p class="text-sm text-on-surface-variant">Conflict-first trend analysis. Sources disagree → you decide.</p>
         </div>
-        <div class="text-xs text-on-surface-variant">Sort by: <select class="border border-outline-variant rounded px-2 py-1 bg-surface text-sm"><option>Action Urgency</option><option>Margin Risk</option></select></div>
+        <div class="text-xs text-on-surface-variant">Sort by:
+            <select id="sort-select" class="border border-outline-variant rounded px-2 py-1 bg-surface text-sm" onchange="sortCards()">
+                <option value="urgency">Action Urgency</option>
+                <option value="margin">Margin Risk</option>
+                <option value="name">Name A-Z</option>
+            </select>
+        </div>
     </div>
 
     <!-- Action Required -->
@@ -74,4 +80,30 @@
         </div>
     </section>
 </div>
+
+<script>
+function sortCards() {
+    var sortVal = document.getElementById('sort-select').value;
+    var sections = document.querySelectorAll('section');
+    sections.forEach(function(section) {
+        var container = section.querySelector('.space-y-2');
+        if (!container) return;
+        var cards = Array.from(container.querySelectorAll('a'));
+        cards.sort(function(a, b) {
+            var nameA = (a.querySelector('h3').textContent || '').toLowerCase();
+            var nameB = (b.querySelector('h3').textContent || '').toLowerCase();
+            if (sortVal === 'name') { return nameA.localeCompare(nameB); }
+            if (sortVal === 'margin') {
+                var marginA = (a.textContent || '').includes('High') ? 3 : (a.textContent || '').includes('Medium') ? 2 : 1;
+                var marginB = (b.textContent || '').includes('High') ? 3 : (b.textContent || '').includes('Medium') ? 2 : 1;
+                return marginB - marginA;
+            }
+            var critA = (a.querySelector('span')?.textContent || '').includes('CRITICAL') ? 0 : 1;
+            var critB = (b.querySelector('span')?.textContent || '').includes('CRITICAL') ? 0 : 1;
+            return critA - critB || nameA.localeCompare(nameB);
+        });
+        cards.forEach(function(card) { container.appendChild(card); });
+    });
+}
+</script>
 {% endblock %}
