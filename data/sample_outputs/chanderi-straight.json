@@ -1,0 +1,28 @@
+{
+  "summary": "Chanderi silk straight kurtis with zari border show converging positive signals across 3 of 4 sources. Biba has a long-running ad campaign (28 days), search momentum is rising (+42% on related terms), and marketplace presence is strong at organic pricing. Review sentiment is solid. The main risk is dry-clean dependency and slight transparency complaints which may increase returns.",
+  "for": [
+    {"source": "Google Trends", "signal": "Search momentum is rising (~40% increase over 3 months). Chanderi-related terms show consistent upward trajectory.", "strength": "strong"},
+    {"source": "Competitor Ads (Meta)", "signal": "3 competitors (Biba, Aurelia, Westside) are actively advertising Chanderi straight kurtis. Biba's campaign has been running 28+ days, indicating sustained conviction.", "strength": "strong"},
+    {"source": "Marketplace", "signal": "Strong marketplace presence at low discounting (15-20%). Biba's Chanderi kurti is ranked #3 on Myntra with 1,240 reviews and strong 4.2 rating.", "strength": "strong"},
+    {"source": "Customer Reviews", "signal": "Review sentiment is solid (68% positive). Buyers praise premium feel and zari quality. Value perception is high at ₹699-899.", "strength": "moderate"}
+  ],
+  "against": [
+    {"source": "Customer Reviews", "signal": "Sizing runs small (1 inch) — may drive returns and store-level dissatisfaction if not corrected in buying specs.", "strength": "moderate"},
+    {"source": "Customer Reviews", "signal": "Slight transparency issue — customers note need for a slip. May affect repeat purchase.", "strength": "weak"},
+    {"source": "Customer Reviews", "signal": "Dry clean only is a friction point for daily-wear positioning at this price band.", "strength": "weak"}
+  ],
+  "disagreements": [],
+  "missing_evidence": [
+    "Store-floor feedback: did last season's Chanderi styles sell through or sit?",
+    "Supplier lead times for Chanderi fabric — can we re-order mid-season?",
+    "Regional breakdown: is this a North India festive trend or pan-India?",
+    "Instagram creator organic content velocity for Chanderi straight kurtis"
+  ],
+  "confidence_assessment": "moderate",
+  "watch_next": [
+    "Monitor Biba's Chanderi ad — if it runs past 45 days, conviction is confirmed",
+    "Check return rates on similar Chanderi styles for sizing complaints",
+    "Survey 5 top stores: are customers asking about Chanderi?",
+    "Validate fabric supplier availability for October festive window"
+  ]
+}

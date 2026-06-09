@@ -1,0 +1,31 @@
+{
+  "summary": "Fusion kurtis with palazzo sets show the strongest signal across all four sources — but with an important caveat. Search momentum is highest, 3 competitors are advertising heavily, marketplace ranks are top-tier, and review sentiment is strong. However: heavy discounting (40% on Myntra) suggests demand at full price is unproven, and this is a crowded category with saturation risk. A moderate buy with re-orderable fabric is the right call.",
+  "for": [
+    {"source": "Google Trends", "signal": "Strongest search momentum among all tracked trends. 'Kurti with palazzo' and 'fusion kurti set' show consistent upward search volume.", "strength": "strong"},
+    {"source": "Competitor Ads (Meta)", "signal": "3 competitors (Libas, Westside, Aurelia) actively advertising palazzo sets. Libas campaign running 35 days — strong conviction signal.", "strength": "strong"},
+    {"source": "Marketplace", "signal": "Ranked #2 on Myntra and #4 on Ajio. 2,100+ reviews, high velocity (120 reviews/30d). Strongest marketplace signal in the dataset.", "strength": "strong"},
+    {"source": "Customer Reviews", "signal": "72% positive sentiment with 40 reviews analyzed. Buyers love the coordinated set concept. Good value perception.", "strength": "strong"}
+  ],
+  "against": [
+    {"source": "Marketplace", "signal": "Libas palazzo set is at 40% discount on Myntra — rank may be heavily price-driven. Full-price demand is unproven.", "strength": "strong"},
+    {"source": "Marketplace", "signal": "High saturation risk — this is already a top-ranked category. Late entrants may face price wars.", "strength": "moderate"},
+    {"source": "Customer Reviews", "signal": "Fabric quality complaints — buyers report 'polyester feel' not matching cotton claims. Returns possible if fabric doesn't meet expectation.", "strength": "moderate"},
+    {"source": "Customer Reviews", "signal": "Palazzo length issue for shorter customers (under 5'2\"). Returns on fit expected unless sizing is adjusted.", "strength": "weak"}
+  ],
+  "disagreements": [
+    {"topic": "Demand quality vs. price distortion", "source_a": "Marketplace (ranks)", "source_b": "Marketplace (discounts)", "detail": "Top-2 rank signals high demand, but 40% discount means buyers may be price-shopping, not style-committed. If the category moves to full-price, demand could drop sharply."}
+  ],
+  "missing_evidence": [
+    "What is the average discount in this category? Is 40% normal or distressed?",
+    "Can we differentiate enough to avoid the price war? (unique prints, better fabric, etc.)",
+    "Supplier lead times for palazzo sets — is the supply chain pre-built or do we need new vendor relationships?",
+    "Store sell-through data from the last 2 seasons for similar co-ord set products"
+  ],
+  "confidence_assessment": "moderate",
+  "watch_next": [
+    "Monitor discount levels on top-ranked palazzo sets — if discounts drop below 20%, full-price demand is real",
+    "Track competitor ad duration — if Libas continues past 60 days, category is still growing",
+    "Test fabric options (cotton blend vs rayon) to address 'polyester feel' complaint",
+    "Check if Myntra/Ajio add new palazzo set brands — more entrants = saturation risk"
+  ]
+}

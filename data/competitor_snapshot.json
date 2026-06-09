@@ -1,0 +1,53 @@
+{
+  "last_updated": "2025-06-01",
+  "disclaimer": "Collected manually from brand websites, Myntra, and Meta Ad Library. Point-in-time snapshot for demo purposes. Not real-time.",
+  "brands": {
+    "Biba": {
+      "active_ads": 12,
+      "ad_focus": ["chanderi kurti", "straight cut", "festive collection"],
+      "recent_launches": [
+        {"product": "Chanderi Zari Straight Kurti", "price": 899, "fabric": "Chanderi", "silhouette": "Straight", "prints": ["solid with zari border"], "ad_running_days": 28, "trend_ids": ["chanderi-straight"]},
+        {"product": "Handblock Cotton A-Line Kurti", "price": 599, "fabric": "Cotton", "silhouette": "A-line", "prints": ["handblock"], "ad_running_days": 14, "trend_ids": ["blockprint-cotton"]},
+        {"product": "Organza Embroidered Anarkali", "price": 1299, "fabric": "Organza", "silhouette": "Anarkali", "prints": ["solid embroidered"], "ad_running_days": 45, "trend_ids": ["organza-embroidered"]}
+      ],
+      "price_range": "₹499-1499",
+      "dominant_silhouettes": ["Straight", "Anarkali"],
+      "dominant_fabrics": ["Chanderi", "Cotton", "Organza"]
+    },
+    "Libas": {
+      "active_ads": 8,
+      "ad_focus": ["fusion sets", "palazzo kurti", "printed kurtis"],
+      "recent_launches": [
+        {"product": "Fusion Kurti with Palazzo Set", "price": 799, "fabric": "Rayon blend", "silhouette": "Straight with palazzo", "prints": ["digital print"], "ad_running_days": 35, "trend_ids": ["fusion-palazzo"]},
+        {"product": "Ikat Print Anarkali Kurti", "price": 899, "fabric": "Cotton-silk", "silhouette": "Anarkali", "prints": ["ikat"], "ad_running_days": 10, "trend_ids": ["ikat-anarkali"]},
+        {"product": "Bandhani Print Straight Kurti", "price": 649, "fabric": "Cotton", "silhouette": "Straight", "prints": ["bandhani"], "ad_running_days": 7, "trend_ids": ["bandhani-straight"]}
+      ],
+      "price_range": "₹499-1199",
+      "dominant_silhouettes": ["Straight with palazzo", "Anarkali"],
+      "dominant_fabrics": ["Rayon", "Cotton-silk", "Cotton"]
+    },
+    "Aurelia": {
+      "active_ads": 6,
+      "ad_focus": ["cotton kurtis", "daily wear", "block print"],
+      "recent_launches": [
+        {"product": "Block-Print Cotton Straight Kurti", "price": 499, "fabric": "Cotton", "silhouette": "Straight", "prints": ["handblock"], "ad_running_days": 21, "trend_ids": ["blockprint-cotton"]},
+        {"product": "Linen Blend Straight Kurti", "price": 799, "fabric": "Linen blend", "silhouette": "Straight", "prints": ["solid"], "ad_running_days": 5, "trend_ids": ["linen-chinese-collar"]},
+        {"product": "Chanderi Embroidered Kurti", "price": 899, "fabric": "Chanderi", "silhouette": "Straight", "prints": ["solid embroidered"], "ad_running_days": 14, "trend_ids": ["chanderi-straight"]}
+      ],
+      "price_range": "₹399-999",
+      "dominant_silhouettes": ["Straight"],
+      "dominant_fabrics": ["Cotton", "Linen blend", "Chanderi"]
+    },
+    "Westside": {
+      "active_ads": 4,
+      "ad_focus": ["contemporary ethnic", "printed kurtis", "workwear kurtis"],
+      "recent_launches": [
+        {"product": "Printed Palazzo Kurti Set", "price": 899, "fabric": "Crepe", "silhouette": "Straight with palazzo", "prints": ["floral digital"], "ad_running_days": 18, "trend_ids": ["fusion-palazzo"]},
+        {"product": "Ajrakh Print Cotton Kurti", "price": 699, "fabric": "Cotton", "silhouette": "A-line", "prints": ["ajrakh"], "ad_running_days": 12, "trend_ids": ["ajrakh-cotton"]}
+      ],
+      "price_range": "₹499-1499",
+      "dominant_silhouettes": ["Straight", "A-line", "Straight with palazzo"],
+      "dominant_fabrics": ["Crepe", "Cotton", "Chanderi"]
+    }
+  }
+}

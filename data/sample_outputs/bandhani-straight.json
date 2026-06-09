@@ -1,0 +1,30 @@
+{
+  "summary": "Bandhani print straight kurtis show a weak and scattered signal across sources. Only 1 competitor (Libas) is testing it with a short 7-day ad campaign. Search interest is barely registering. Marketplace presence is weak (rank #35, 67 reviews). Review sentiment is strong from a tiny sample, but that's not enough to bet on. This is a MONITOR, not a buy.",
+  "for": [
+    {"source": "Competitor Ads (Meta)", "signal": "Libas has launched a Bandhani straight kurti ad campaign (7 days old). Too early to judge conviction, but they're testing.", "strength": "weak"},
+    {"source": "Customer Reviews", "signal": "Limited review data (67 reviews) but very positive sentiment (83%). Early adopters love it — sample is small.", "strength": "weak"},
+    {"source": "Google Trends", "signal": "Bandhani-related search terms are stable, not declining. Seasonal uptick possible pre-festive.", "strength": "weak"}
+  ],
+  "against": [
+    {"source": "Marketplace", "signal": "Very weak marketplace presence — rank #35 on Myntra with only 67 reviews. This is well below the top-20 discovery threshold for online shoppers.", "strength": "strong"},
+    {"source": "Competitor Ads (Meta)", "signal": "Only 1 competitor testing this trend, and for just 7 days. No major brand conviction visible. Biba and Aurelia are not backing Bandhani.", "strength": "moderate"},
+    {"source": "Google Trends", "signal": "Search volume is low overall for Bandhani-specific terms. Could be a vernacular-search blind spot, but the data we have is weak.", "strength": "moderate"},
+    {"source": "Customer Reviews", "signal": "No review data available for our specific trend configuration. Fit and wash durability are unknown.", "strength": "moderate"}
+  ],
+  "disagreements": [
+    {"topic": "Demand reality", "source_a": "Customer Reviews (small sample)", "source_b": "Marketplace (weak presence)", "detail": "The few reviews available are very positive, but marketplace rank is poor. This could mean the product is good but discovery is low (opportunity), or the addressable market is genuinely small (risk)."}
+  ],
+  "missing_evidence": [
+    "Regional store feedback: Bandhani is strong in Gujarat/Rajasthan — if our stores are elsewhere, this trend may not apply",
+    "Supplier capability: can we source good Bandhani at ₹499-799 price point?",
+    "Instagram/Pinterest trend velocity: is Bandhani appearing in creator content?",
+    "Last season's Bandhani trial results — did any store test it?"
+  ],
+  "confidence_assessment": "low",
+  "watch_next": [
+    "Watch if Libas Bandhani ad runs past 14 days — if they drop it, the signal is negative",
+    "Check if any other competitor launches Bandhani in the next 4 weeks",
+    "Search for Bandhani on Pinterest and Instagram — is creator interest rising?",
+    "Conduct a quick poll in Gujarat/Rajasthan stores — do customers ask for Bandhani?"
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "last_updated": "2025-06-05",
+  "disclaimer": "Collected manually from Myntra and Ajio bestseller pages. Rankings are point-in-time and can shift due to discounting, stockouts, and ad placements.",
+  "platforms": {
+    "Myntra": {
+      "top_kurti_styles": [
+        {"name": "Chanderi Silk Straight Kurti with Zari Border", "brand": "Biba", "price": 899, "discount": "15%", "rank": 3, "reviews": 1240, "avg_rating": 4.2, "stock_status": "In stock", "review_velocity_30d": 85, "trend_ids": ["chanderi-straight"]},
+        {"name": "Block-Print Cotton A-Line Kurti", "brand": "Aurelia", "price": 499, "discount": "25%", "rank": 7, "reviews": 890, "avg_rating": 3.9, "stock_status": "In stock", "review_velocity_30d": 42, "trend_ids": ["blockprint-cotton"]},
+        {"name": "Handblock Cotton A-Line Kurti", "brand": "Biba", "price": 599, "discount": "10%", "rank": 14, "reviews": 423, "avg_rating": 4.1, "stock_status": "In stock", "review_velocity_30d": 31, "trend_ids": ["blockprint-cotton"]},
+        {"name": "Fusion Kurti with Palazzo Set", "brand": "Libas", "price": 799, "discount": "40%", "rank": 2, "reviews": 2100, "avg_rating": 4.1, "stock_status": "Low stock", "review_velocity_30d": 120, "trend_ids": ["fusion-palazzo"]},
+        {"name": "Organza Embroidered Kurti", "brand": "Biba", "price": 1299, "discount": "10%", "rank": 12, "reviews": 340, "avg_rating": 4.5, "stock_status": "In stock", "review_velocity_30d": 28, "trend_ids": ["organza-embroidered"]},
+        {"name": "Ikat Print Anarkali Kurti", "brand": "Libas", "price": 899, "discount": "30%", "rank": 18, "reviews": 156, "avg_rating": 4.0, "stock_status": "In stock", "review_velocity_30d": 45, "trend_ids": ["ikat-anarkali"]},
+        {"name": "Bandhani Print Straight Kurti", "brand": "Libas", "price": 649, "discount": "20%", "rank": 35, "reviews": 67, "avg_rating": 4.3, "stock_status": "In stock", "review_velocity_30d": 22, "trend_ids": ["bandhani-straight"]},
+        {"name": "Ajrakh Print Cotton Kurti", "brand": "Westside", "price": 699, "discount": "0%", "rank": 55, "reviews": 42, "avg_rating": 4.6, "stock_status": "In stock", "review_velocity_30d": 15, "trend_ids": ["ajrakh-cotton"]},
+        {"name": "Linen Straight Kurti with Chinese Collar", "brand": "Aurelia", "price": 799, "discount": "15%", "rank": 32, "reviews": 78, "avg_rating": 3.9, "stock_status": "In stock", "review_velocity_30d": 11, "trend_ids": ["linen-chinese-collar"]},
+        {"name": "Organza Party Wear Anarkali Kurti", "brand": "Biba", "price": 1199, "discount": "10%", "rank": 15, "reviews": 215, "avg_rating": 4.4, "stock_status": "In stock", "review_velocity_30d": 19, "trend_ids": ["organza-embroidered"]}
+      ]
+    },
+    "Ajio": {
+      "top_kurti_styles": [
+        {"name": "Fusion Kurti with Palazzo Set", "brand": "Libas", "price": 849, "discount": "35%", "rank": 4, "reviews": 780, "avg_rating": 4.0, "stock_status": "In stock", "review_velocity_30d": 65, "trend_ids": ["fusion-palazzo"]},
+        {"name": "Chanderi Silk Straight Kurti with Zari Border", "brand": "Biba", "price": 949, "discount": "20%", "rank": 8, "reviews": 450, "avg_rating": 4.1, "stock_status": "In stock", "review_velocity_30d": 38, "trend_ids": ["chanderi-straight"]},
+        {"name": "Block-Print Cotton A-Line Kurti", "brand": "Aurelia", "price": 549, "discount": "30%", "rank": 15, "reviews": 320, "avg_rating": 3.7, "stock_status": "In stock", "review_velocity_30d": 28, "trend_ids": ["blockprint-cotton"]},
+        {"name": "Linen Blend Straight Kurti with Collar", "brand": "Aurelia", "price": 799, "discount": "15%", "rank": 25, "reviews": 89, "avg_rating": 3.8, "stock_status": "In stock", "review_velocity_30d": 12, "trend_ids": ["linen-chinese-collar"]},
+        {"name": "Ikat Print Anarkali Kurti", "brand": "Libas", "price": 899, "discount": "20%", "rank": 22, "reviews": 134, "avg_rating": 4.2, "stock_status": "In stock", "review_velocity_30d": 18, "trend_ids": ["ikat-anarkali"]}
+      ]
+    }
+  },
+  "signals_to_discount": [
+    "Fusion Kurti with Palazzo Set has 40% discount on Myntra — inflated rank",
+    "Organza Embroidered Kurti at 10% discount — organic demand signal stronger",
+    "Ajrakh has only 42 reviews — low sample size, early-stage product"
+  ]
+}

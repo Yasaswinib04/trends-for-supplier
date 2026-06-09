@@ -1,0 +1,86 @@
+{
+  "last_updated": "2025-06-05",
+  "disclaimer": "Curated review excerpts collected manually from Myntra and Ajio product pages. Small sample, not statistically representative. Included to demonstrate review signal analysis.",
+  "trends": {
+    "chanderi-straight": {
+      "total_reviews_analyzed": 25,
+      "sentiment_ratio": {"positive": 0.68, "neutral": 0.20, "negative": 0.12},
+      "common_praise": [
+        "Fabric feels premium",
+        "Exactly as shown in image",
+        "Good for office and small functions",
+        "Zari border is neat and stays after wash"
+      ],
+      "common_complaints": [
+        "Slightly transparent — need a slip",
+        "Dry clean only is inconvenient",
+        "Color slightly different from image (app users)",
+        "Sizing runs 1 inch small"
+      ]
+    },
+    "blockprint-cotton": {
+      "total_reviews_analyzed": 30,
+      "sentiment_ratio": {"positive": 0.60, "neutral": 0.23, "negative": 0.17},
+      "common_praise": [
+        "Comfortable for daily wear",
+        "Print is beautiful and unique",
+        "Good value at this price",
+        "Breathable in summer"
+      ],
+      "common_complaints": [
+        "Color bleeds in first 2 washes",
+        "Fabric is thinner than expected",
+        "Print fades after 4-5 washes",
+        "Sizing inconsistent between colors"
+      ]
+    },
+    "fusion-palazzo": {
+      "total_reviews_analyzed": 40,
+      "sentiment_ratio": {"positive": 0.72, "neutral": 0.15, "negative": 0.13},
+      "common_praise": [
+        "Love the coordinated set",
+        "Palazzo fits perfectly",
+        "Great for college/office",
+        "Dupatta is a nice addition"
+      ],
+      "common_complaints": [
+        "Fabric is polyester feel — not cotton as claimed",
+        "Palazzo length too long for 5'2\" and under",
+        "Button quality is poor",
+        "Color variation between top and bottom"
+      ]
+    },
+    "organza-embroidered": {
+      "total_reviews_analyzed": 15,
+      "sentiment_ratio": {"positive": 0.80, "neutral": 0.13, "negative": 0.07},
+      "common_praise": [
+        "Looks much more expensive than the price",
+        "Got many compliments at the wedding",
+        "Embroidery is well done",
+        "Perfect for festive occasions"
+      ],
+      "common_complaints": [
+        "Very delicate — snags easily",
+        "Inner lining is cheap polyester",
+        "Only dry clean, high maintenance",
+        "Limited wear occasions — too dressy for daily"
+      ]
+    },
+    "ajrakh-cotton": {
+      "total_reviews_analyzed": 12,
+      "sentiment_ratio": {"positive": 0.83, "neutral": 0.08, "negative": 0.09},
+      "common_praise": [
+        "Print quality is excellent",
+        "Feels authentic and craft-based",
+        "Gets better with every wash",
+        "Love the natural indigo shade"
+      ],
+      "common_complaints": [
+        "Indigo rubs off on skin for first few wears",
+        "Limited pattern options across sizes",
+        "Expect slight irregularities — handcrafted",
+        "Price point higher than regular cotton"
+      ]
+    }
+  }
+}
