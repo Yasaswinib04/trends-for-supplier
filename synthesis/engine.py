@@ -44,6 +44,7 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
     if not client:
         return {
             "headline": f"Analysis of {trend['name']}: No API key configured. Set DEEPSEEK_API_KEY.",
+            "reasoning_trace": [],
             "conflicts": [],
             "convergences": [],
             "upside_summary": "No API key configured.",
@@ -69,10 +70,20 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
         content = response.choices[0].message.content
         result = json.loads(_clean_json(content))
         result["_mode"] = "disagreement_engine"
+
+        # Validate Chain-of-Thought reasoning trace
+        trace = result.get("reasoning_trace")
+        if not trace or not isinstance(trace, list) or len(trace) < 3:
+            result["_missing_trace"] = True
+            result["_mode"] = "disagreement_engine (no CoT)"
+        else:
+            result["_has_trace"] = len(trace)
+
         return result
     except Exception as e:
         return {
             "headline": f"Error analyzing {trend['name']}: {str(e)[:100]}",
+            "reasoning_trace": [],
             "conflicts": [],
             "convergences": [],
             "upside_summary": f"Synthesis failed: {str(e)[:80]}",

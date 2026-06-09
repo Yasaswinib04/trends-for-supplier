@@ -36,11 +36,57 @@ If fewer than 2 sources have actionable signal, or if the evidence is too thin t
 And your bet_lean MUST be "INSUFFICIENT DATA."
 Do not fabricate a recommendation from thin data.
 
+## Chain-of-Thought Reasoning (MANDATORY — output this FIRST)
+
+Before generating any conclusions, you MUST first output a `reasoning_trace` array as the VERY FIRST key in your JSON. Step through each source one at a time:
+
+For EACH source (Nykaa, Myntra, Meesho), add an object to the reasoning_trace with:
+- "source": "<source name>"
+- "what_data_shows": "<plain summary of what the raw data literally says>"
+- "what_it_proves": "<what this data can conclusively demonstrate>"
+- "what_it_cannot_prove": "<what this data definitely cannot prove — where skepticism is warranted>"
+- "relationship_to_others": "<how this source's signal relates to or contradicts the other two sources>"
+
+After all three sources, add a final trace object with:
+- "source": "cross-source synthesis"
+- "key_tensions": "<summary of the main disagreements between sources>"
+- "key_convergences": "<summary of where sources agree>"
+
+Only AFTER completing this reasoning trace should you output conflicts, convergences, bet_lean, and all other fields.
+
 ## OUTPUT FORMAT
 
-Return ONLY a valid JSON object. No markdown, no preambles. Exact keys:
+Return ONLY a valid JSON object. No markdown, no preambles. The FIRST key MUST be `reasoning_trace`. Exact keys:
 
 {
+  "reasoning_trace": [
+    {
+      "source": "<Nykaa>",
+      "what_data_shows": "<...>",
+      "what_it_proves": "<...>",
+      "what_it_cannot_prove": "<...>",
+      "relationship_to_others": "<...>"
+    },
+    {
+      "source": "<Myntra/Ajio>",
+      "what_data_shows": "<...>",
+      "what_it_proves": "<...>",
+      "what_it_cannot_prove": "<...>",
+      "relationship_to_others": "<...>"
+    },
+    {
+      "source": "<Meesho>",
+      "what_data_shows": "<...>",
+      "what_it_proves": "<...>",
+      "what_it_cannot_prove": "<...>",
+      "relationship_to_others": "<...>"
+    },
+    {
+      "source": "cross-source synthesis",
+      "key_tensions": "<...>",
+      "key_convergences": "<...>"
+    }
+  ],
   "headline": "<string: one-line verdict. If sources disagree, LEAD with the disagreement. Start with '⚡ Sources disagree' if conflicts exist. Start with '⚠️ Insufficient evidence' if data is too thin.>",
   "conflicts": [
     {

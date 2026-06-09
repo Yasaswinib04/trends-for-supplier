@@ -48,7 +48,6 @@ body { font-family: 'IBM Plex Sans', sans-serif; }
     <div class="mb-4"><div class="text-lg font-bold text-primary">Disagreement Engine</div></div>
     <a href="/" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.endpoint == 'decision_board' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📊 Decision Board</a>
     <a href="/market-view" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/market-view' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📈 Market View</a>
-    <a href="/sourcing" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/sourcing' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📦 Sourcing</a>
 </nav>
 {% endblock %}
 <main class="flex-1 overflow-y-auto">

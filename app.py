@@ -129,16 +129,22 @@ def _scan_live_trends():
 def market_view():
     return render_template("market_view.html")
 
-@app.route("/sourcing")
-def sourcing():
-    return render_template("sourcing.html")
-
 @app.route("/api/override", methods=["POST"])
 def api_override():
     data = request.get_json()
     log_override(
         data.get("trend_id", ""), data.get("trend_name", ""),
         data.get("system_bet", ""), data.get("reason", ""),
+        data.get("notes", "")
+    )
+    return jsonify({"status": "ok"})
+
+@app.route("/api/commit", methods=["POST"])
+def api_commit():
+    data = request.get_json()
+    log_override(
+        data.get("trend_id", ""), data.get("trend_name", ""),
+        data.get("system_bet", ""), "Bet committed",
         data.get("notes", "")
     )
     return jsonify({"status": "ok"})

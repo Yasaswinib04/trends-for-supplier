@@ -10,7 +10,8 @@
     "silhouette": "Straight",
     "fabric": "Chanderi silk",
     "key_features": ["zari border", "three-quarter sleeves", "mandarin collar"],
-    "target_demo": "Urban 25-40, office-to-evening"
+    "target_demo": "Urban 25-40, office-to-evening",
+    "image_url": "https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=400&h=600&fit=crop"
   },
   {
     "id": "blockprint-cotton",
@@ -23,7 +24,8 @@
     "silhouette": "A-line",
     "fabric": "Cotton",
     "key_features": ["hand block print", "natural dyes", "pocket detail"],
-    "target_demo": "Mass market, 18-45, daily wear"
+    "target_demo": "Mass market, 18-45, daily wear",
+    "image_url": "https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=400&h=600&fit=crop"
   },
   {
     "id": "bandhani-straight",
@@ -36,7 +38,8 @@
     "silhouette": "Straight",
     "fabric": "Cotton/Cotton-silk",
     "key_features": ["bandhani print", "contrast piping", "flared sleeves option"],
-    "target_demo": "Regional strong (Gujarat, Rajasthan), 22-40"
+    "target_demo": "Regional strong (Gujarat, Rajasthan), 22-40",
+    "image_url": "https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&h=600&fit=crop"
   },
   {
     "id": "fusion-palazzo",
@@ -49,7 +52,8 @@
     "silhouette": "Various + palazzo",
     "fabric": "Rayon/Cotton blend",
     "key_features": ["palazzo pant", "contrast dupatta", "printed sets"],
-    "target_demo": "College/young working, 18-30"
+    "target_demo": "College/young working, 18-30",
+    "image_url": "https://images.unsplash.com/photo-1596755094514-f87e34085b2c?w=400&h=600&fit=crop"
   },
   {
     "id": "ajrakh-cotton",
@@ -62,7 +66,8 @@
     "silhouette": "Straight/A-line",
     "fabric": "Cotton",
     "key_features": ["ajrakh block print", "natural indigo", "handcraft story"],
-    "target_demo": "Conscious fashion, 25-45, tier 1-2 cities"
+    "target_demo": "Conscious fashion, 25-45, tier 1-2 cities",
+    "image_url": "https://images.unsplash.com/photo-1609505848912-b7c3b3b3f1d1?w=400&h=600&fit=crop"
   },
   {
     "id": "organza-embroidered",
@@ -75,7 +80,8 @@
     "silhouette": "Flared/Anarkali",
     "fabric": "Organza",
     "key_features": ["thread embroidery", "mirror work", "layered silhouette"],
-    "target_demo": "Premium value, 25-45, wedding guest"
+    "target_demo": "Premium value, 25-45, wedding guest",
+    "image_url": "https://images.unsplash.com/photo-1604004555489-723a93d6ce74?w=400&h=600&fit=crop"
   },
   {
     "id": "linen-chinese-collar",
@@ -88,7 +94,8 @@
     "silhouette": "Straight",
     "fabric": "Linen/Linen-blend",
     "key_features": ["Chinese collar", "side slits", "minimalist"],
-    "target_demo": "Office wear, 28-45, tier 1 cities"
+    "target_demo": "Office wear, 28-45, tier 1 cities",
+    "image_url": "https://images.unsplash.com/photo-1583744946564-b52ac1c389c8?w=400&h=600&fit=crop"
   },
   {
     "id": "ikat-anarkali",
@@ -101,6 +108,7 @@
     "silhouette": "Anarkali",
     "fabric": "Cotton-silk blend",
     "key_features": ["ikat weave print", "flared silhouette", "gotapatti detail"],
-    "target_demo": "Festive wear, 22-40, all tiers"
+    "target_demo": "Festive wear, 22-40, all tiers",
+    "image_url": "https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=400&h=600&fit=crop"
   }
 ]

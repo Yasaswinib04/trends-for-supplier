@@ -10,7 +10,7 @@
 </style>
 {% endblock %}
 {% block content %}
-<div class="pb-28">
+<div class="pb-8 flex flex-col min-h-full">
 
 <header class="border-b border-outline-variant bg-surface sticky top-0 z-10 px-6 py-4">
     <div class="max-w-6xl mx-auto">
@@ -113,6 +113,38 @@
     </div>
     {% endif %}
 
+    <!-- Two-column layout: image on left, analysis on right -->
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 mb-4">
+
+        <!-- Left: Visual Anchor -->
+        <div class="md:col-span-3">
+            {% if trend.image_url %}
+            <div class="bg-surface-container-lowest border border-outline-variant rounded overflow-hidden mb-2">
+                <img src="{{ trend.image_url }}" alt="{{ trend.name }}" class="w-full h-auto object-cover" style="max-height:420px;" onerror="this.style.display='none'" />
+            </div>
+            <div class="text-[10px] text-on-surface-variant text-center">{{ trend.name }}</div>
+            <div class="text-[10px] text-on-surface-variant text-center mt-1">{{ trend.price_band }} · {{ trend.silhouette }} · {{ trend.fabric }}</div>
+            {% endif %}
+
+            <!-- Visual Insight Carousel -->
+            <div class="mt-4 space-y-2">
+                {% for src in [
+                    ('✨ Nykaa', nykaa.nykaa_presence or '?', '₹' + (nykaa.avg_price|string if nykaa.avg_price else '?')),
+                    ('🛒 Myntra', myntra.marketplace_presence or '?', 'Rank #' + (myntra.products_found[0].rank|string if myntra.products_found else '?')),
+                    ('📦 Meesho', meesho.meesho_presence or '?', (meesho.total_units_sold|string if meesho.total_units_sold else '0') + ' units')
+                ] %}
+                <div class="bg-surface-container-lowest border border-outline-variant rounded p-2 text-xs">
+                    <div class="font-semibold text-primary">{{ src[0] }}</div>
+                    <div class="text-on-surface">{{ src[1] }}</div>
+                    <div class="text-on-surface-variant font-mono text-[10px]">{{ src[2] }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Right: Analysis -->
+        <div class="md:col-span-9">
+
     <!-- Upside / Catch -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
@@ -208,6 +240,9 @@
     </div>
     {% endif %}
 
+        </div><!-- .md:col-span-9 -->
+    </div><!-- .grid -->
+
     <!-- Watch + Missing -->
     <div class="grid grid-cols-2 gap-4 mb-4">
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
@@ -240,18 +275,29 @@
 </div>
 
 <!-- Sticky Footer -->
-<div class="fixed bottom-0 left-0 right-0 h-20 bg-surface border-t border-outline-variant sticky-foot z-50 flex items-center px-6">
-    <div class="max-w-6xl mx-auto w-full flex flex-col md:flex-row justify-between items-center gap-3">
-        <div class="flex items-center gap-2">
-            <span class="material-symbols-outlined text-primary text-lg">lightbulb</span>
-            <span class="text-xs font-semibold text-on-surface-variant">System:</span>
-            <span class="text-sm font-semibold" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'WAIT' }}</span>
-            <span class="text-xs text-on-surface-variant ml-1">— {{ synth.bet_rationale[:60] if synth.bet_rationale else '' }}</span>
+<div class="sticky bottom-0 w-full py-4 bg-surface border-t border-outline-variant sticky-foot z-50 flex items-center px-6 mt-auto">
+    <div class="max-w-6xl mx-auto w-full flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center gap-3 flex-1">
+            <span class="material-symbols-outlined text-primary text-2xl">lightbulb</span>
+            <div class="flex flex-col">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">System Recommendation</span>
+                </div>
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-lg font-bold whitespace-nowrap" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'WAIT' }}</span>
+                    <span class="text-sm font-medium text-on-surface line-clamp-2 md:line-clamp-1">— {{ synth.bet_rationale if synth.bet_rationale else '' }}</span>
+                </div>
+            </div>
         </div>
-        <div class="flex gap-2">
-            <button onclick="showOverride()" class="px-4 py-2 border border-outline-variant text-on-surface-variant text-xs font-semibold rounded hover:bg-surface-container-high transition-colors">Override</button>
+        <div class="flex gap-3 shrink-0">
+            <button onclick="showOverride()" class="px-5 py-2.5 border-2 border-outline-variant text-on-surface-variant text-sm font-bold rounded-lg hover:bg-surface-container-high hover:border-on-surface-variant transition-colors flex items-center gap-2 shadow-sm">
+                <span class="text-lg leading-none">🚫</span> Override Call
+            </button>
             {% if synth.bet_lean != 'INSUFFICIENT DATA' %}
-            <button onclick="commitBet()" class="px-4 py-2 bg-primary text-on-primary text-xs font-semibold rounded hover:opacity-90 transition-colors">Commit Bet</button>
+            <button onclick="commitBet()" class="px-5 py-2.5 bg-[#16a34a] text-white text-sm font-bold rounded-lg hover:bg-[#15803d] transition-colors shadow-sm flex items-center gap-2">
+                <span class="text-lg leading-none">✅</span> Approve Bet
+            </button>
+            <div id="commit-success" class="hidden ml-3 text-sm font-semibold text-success py-1">✅ Bet Logged — Routed to Planning</div>
             {% endif %}
         </div>
     </div>
@@ -259,21 +305,23 @@
 
 <div id="override-modal" class="fixed inset-0 z-[200] hidden items-center justify-center p-4">
     <div class="absolute inset-0" style="backdrop-filter:blur(8px);background:rgba(25,27,36,0.4)" onclick="hideOverride()"></div>
-    <div class="relative bg-surface rounded-lg shadow-xl w-full max-w-md border border-outline-variant p-6">
-        <h3 class="text-lg font-semibold mb-3">Override Rationale</h3>
-        <p class="text-sm text-on-surface-variant mb-3">System says: <strong>{{ synth.bet_lean }}</strong></p>
-        <select id="override-reason" class="w-full border border-outline-variant rounded p-2 text-sm mb-3 bg-surface">
+    <div class="relative bg-surface rounded-xl shadow-2xl w-full max-w-md border border-outline-variant p-6">
+        <h3 class="text-xl font-bold mb-2">Override Rationale</h3>
+        <p class="text-sm text-on-surface-variant mb-4">System recommended: <strong style="color:{{ bet_clr }}">{{ synth.bet_lean }}</strong></p>
+        
+        <label class="block text-sm font-semibold text-on-surface mb-2">Help the engine learn. Why are we passing?</label>
+        <select id="override-reason" class="w-full border-2 border-outline-variant rounded-lg p-3 text-sm mb-4 bg-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all">
             <option value="">Select reason</option>
-            <option>Lead time exceeds buying window</option>
-            <option>Margin threshold breached</option>
-            <option>Target audience mismatch</option>
-            <option>Silhouette not aligned with core</option>
+            <option>Supplier lead times</option>
+            <option>Too premium for our base</option>
+            <option>Costing/Margin break</option>
+            <option>Internal design direction</option>
             <option>Other</option>
         </select>
-        <input id="override-notes" class="w-full border border-outline-variant rounded p-2 text-sm mb-3 bg-surface" placeholder="Notes"/>
-        <div class="flex justify-end gap-2">
-            <button onclick="hideOverride()" class="px-4 py-2 text-sm rounded hover:bg-surface-container">Cancel</button>
-            <button onclick="submitOverride()" class="px-4 py-2 text-sm bg-tertiary text-white rounded hover:opacity-90">Confirm</button>
+        <input id="override-notes" class="w-full border-2 border-outline-variant rounded-lg p-3 text-sm mb-6 bg-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Optional context for the system..."/>
+        <div class="flex justify-end gap-3">
+            <button onclick="hideOverride()" class="px-5 py-2.5 text-sm font-semibold rounded-lg hover:bg-surface-container transition-colors">Cancel</button>
+            <button onclick="submitOverride()" class="px-5 py-2.5 text-sm font-bold bg-primary text-white rounded-lg hover:opacity-90 shadow-sm transition-opacity">Confirm Override</button>
         </div>
     </div>
 </div>
@@ -281,7 +329,15 @@
 <script>
 function showOverride() { document.getElementById('override-modal').classList.add('dd-open'); }
 function hideOverride() { document.getElementById('override-modal').classList.remove('dd-open'); }
-function commitBet() { window.location.href = '/sourcing'; }
+function commitBet() {
+    fetch('/api/commit', {method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({trend_id:'{{ trend.id }}',trend_name:'{{ trend.name }}',system_bet:'{{ synth.bet_lean }}',notes:''})
+    }).then(function() {
+        var btn = document.querySelector('button[onclick="commitBet()"]');
+        if (btn) { btn.disabled = true; btn.style.opacity = '0.5'; }
+        document.getElementById('commit-success').classList.remove('hidden');
+    });
+}
 function submitOverride() {
     var r = document.getElementById('override-reason').value;
     if (!r) return alert('Select a reason.');
