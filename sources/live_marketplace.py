@@ -18,6 +18,7 @@ Usage:
 
 import json
 import os
+import ssl
 import urllib.request
 import urllib.parse
 from pathlib import Path
@@ -30,6 +31,10 @@ RAPIDAPI_HOST = "realtime-flipkart-amazon-myntra-ajio-croma-product-details.p.ra
 RAPIDAPI_BASE = "https://realtime-flipkart-amazon-myntra-ajio-croma-product-details.p.rapidapi.com"
 
 SUPPORTED_PLATFORMS = ["amazon", "flipkart", "myntra", "ajio", "croma"]
+
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
 
 
 def search_live_marketplace(query: str, platform: str = "myntra",
@@ -71,7 +76,7 @@ def search_live_marketplace(query: str, platform: str = "myntra",
         }
 
         req = urllib.request.Request(url, headers=headers)
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
             data = json.loads(resp.read())
 
         if not data or data.get("error"):

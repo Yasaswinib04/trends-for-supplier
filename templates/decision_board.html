@@ -1,37 +1,113 @@
 {% extends "base.html" %}
-{% block title %}Decision Board — Disagreement Engine{% endblock %}
+{% block title %}Decision Board — Kurti Trend Engine{% endblock %}
 {% block content %}
-<div class="max-w-5xl mx-auto px-6 py-8">
-    <div class="flex justify-between items-end mb-8 border-b border-outline-variant pb-4">
-        <div>
-        <h1 class="text-3xl font-semibold text-on-surface mb-1">Decision Board</h1>
-        <p class="text-sm text-on-surface-variant">Ranked by decision risk — what's most expensive to get wrong. Conflicts, fabric commitments, and seasonal windows push items higher.</p>
+<div class="max-w-6xl mx-auto px-6 py-8">
 
-        <div class="flex flex-col mt-5">
-            <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Sort Board By</span>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-2 w-full max-w-2xl">
-                <button onclick="sortBy('conflict')" id="sort-conflict" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-primary bg-primary-container text-on-primary-container">
-                    <span class="text-[11px] font-bold mb-0.5">Highest Conflict</span>
-                    <span class="text-[10px] opacity-80 leading-tight">Sources disagree most</span>
-                </button>
-                <button onclick="sortBy('risk')" id="sort-risk" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
-                    <span class="text-[11px] font-bold mb-0.5">Decision Risk</span>
-                    <span class="text-[10px] opacity-80 leading-tight">Cost of being wrong</span>
-                </button>
-                <button onclick="sortBy('window')" id="sort-window" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
-                    <span class="text-[11px] font-bold mb-0.5">Seasonal Window</span>
-                    <span class="text-[10px] opacity-80 leading-tight">Closest to cutoff</span>
-                </button>
+    <div class="flex justify-between items-end mb-6 border-b border-outline-variant pb-4">
+        <div>
+            <h1 class="text-3xl font-semibold text-on-surface mb-1">Decision Board</h1>
+            <p class="text-sm text-on-surface-variant">Live market signals + your monitored trend watchlist. Ranked by what's most expensive to get wrong.</p>
+        </div>
+        {% if live_sources_available %}
+        <button onclick="refreshLiveSignals()" id="scan-btn" class="flex items-center gap-1 px-4 py-2 bg-primary text-on-primary text-sm rounded-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-base">refresh</span> Scan Market
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- ═══════ LIVE MARKET PULSE ═══════ -->
+    <section class="mb-8" id="live-pulse-section">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-lg">radar</span>
+            <h2 class="text-lg font-medium">Live Market Pulse</h2>
+            <span class="text-[10px] px-2 py-0.5 rounded-full border {% if live_pulse.scanned %}bg-success-container text-on-success-container border-success{% else %}bg-surface-container text-on-surface-variant border-outline-variant{% endif %}">
+                {% if live_pulse.scanned %}live scan{% else %}offline{% endif %}
+            </span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="pulse-grid">
+
+            <!-- Search Signals -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3">
+                    <span class="material-symbols-outlined text-sm text-primary">trending_up</span>
+                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Search Momentum</span>
+                </div>
+                {% if live_pulse.search_signals %}
+                <div class="space-y-1.5">
+                    {% for s in live_pulse.search_signals[:8] %}
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-on-surface truncate flex-1 mr-2">{{ s.term }}</span>
+                        <span class="font-mono font-bold {% if s.momentum >= 70 %}text-success{% elif s.momentum >= 40 %}text-tertiary{% else %}text-on-surface-variant{% endif %} whitespace-nowrap">
+                            {% if s.momentum >= 70 %}↗{% elif s.momentum >= 40 %}→{% else %}·{% endif %} {{ s.momentum }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-on-surface-variant italic">No rising kurti search terms detected. Run a scan.</p>
+                {% endif %}
+            </div>
+
+            <!-- Marketplace Signals -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3">
+                    <span class="material-symbols-outlined text-sm text-primary">storefront</span>
+                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Live Listings</span>
+                </div>
+                {% if live_pulse.marketplace_signals %}
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    {% for m in live_pulse.marketplace_signals[:6] %}
+                    <div class="border-b border-outline-variant pb-1 last:border-0">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-semibold text-on-surface truncate flex-1 mr-2">{{ m.name[:35] }}</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant whitespace-nowrap">{{ m.platform }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] text-on-surface-variant mt-0.5">
+                            <span>₹{{ m.price }}</span>
+                            {% if m.discount > 0 %}<span class="text-error">-{{ m.discount }}%</span>{% endif %}
+                            {% if m.rating > 0 %}<span>★ {{ m.rating }}</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-xs text-on-surface-variant italic">No live marketplace data. Connect APIs to see real-time listings.</p>
+                {% endif %}
+            </div>
+
+            <!-- Price Context -->
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3">
+                    <span class="material-symbols-outlined text-sm text-primary">payments</span>
+                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Price View</span>
+                </div>
+                {% if live_pulse.price_signals %}
+                {% for ps in live_pulse.price_signals %}
+                <div class="mb-2">
+                    <p class="text-[11px] font-semibold text-on-surface mb-1">{{ ps.query }}</p>
+                    <div class="flex gap-2 text-xs">
+                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.low_price }} low</span>
+                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.median_price }} med</span>
+                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.high_price }} high</span>
+                    </div>
+                    <p class="text-[10px] text-on-surface-variant mt-1">{{ ps.listings }} listings across {{ ps.stores }} stores</p>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-xs text-on-surface-variant italic">Run a scan to see live price ranges across retailers.</p>
+                {% endif %}
             </div>
         </div>
-    </div>
-</div>
 
-<!-- Action Needed Now -->
+        <p class="text-[10px] text-on-surface-variant mt-3 italic">Search signals from Google Trends. Marketplace data from live APIs (Myntra, Ajio, Amazon, Flipkart). These are early indicators — they do not guarantee purchase demand. Always cross-check with your POS data.</p>
+    </section>
+
+    <!-- ═══════ MONITORED TREND WATCHLIST ═══════ -->
     <section class="mb-8">
         <div class="flex items-center gap-2 mb-4">
             <span class="material-symbols-outlined filled text-error text-lg">warning</span>
-            <h2 class="text-lg font-medium">Action Needed</h2>
+            <h2 class="text-lg font-medium">High Risk — Action Needed</h2>
             <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">{{ action_items|length }}</span>
         </div>
         <div class="space-y-2">
@@ -50,7 +126,7 @@
                             <span class="font-mono text-xs whitespace-nowrap">{{ t.price_band }} · {{ t.season }}</span>
                             {% if t.risk_score is defined and t.risk_score >= 3 %}
                             <span class="text-outline-variant">|</span>
-                            <span class="text-[11px] text-tertiary whitespace-nowrap">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
+                            <span class="text-[11px] text-tertiary whitespace-nowrap">{{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -88,7 +164,7 @@
                             <span class="font-mono text-xs whitespace-nowrap">{{ t.price_band }} · {{ t.season }}</span>
                             {% if t.risk_score is defined and t.risk_score >= 3 %}
                             <span class="text-outline-variant">|</span>
-                            <span class="text-[11px] text-tertiary whitespace-nowrap">⚠️ {{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
+                            <span class="text-[11px] text-tertiary whitespace-nowrap">{{ 'Fabric commitment' if 'Chanderi' in t.name or 'Organza' in t.name or 'Linen' in t.name else 'Check seasonal timing' if 'Festive' in t.season else 'Watch discount levels' }}</span>
                             {% endif %}
                         </div>
                     </div>
@@ -98,81 +174,24 @@
             {% endfor %}
         </div>
     </section>
-
-    <!-- Live Scanned Trends -->
-    {% if scanned_trends %}
-    <section>
-        <div class="flex items-center gap-2 mb-4">
-            <span class="material-symbols-outlined text-primary text-lg">radar</span>
-            <h2 class="text-lg font-medium">Live Search Trends</h2>
-            <span class="bg-surface-container-high text-on-surface-variant px-2 py-0.5 rounded-full text-xs">auto-scanned</span>
-        </div>
-        <p class="text-xs text-on-surface-variant mb-3">Rising search terms from Google Trends (past 3 months). These may indicate early demand before products appear on marketplaces.</p>
-        <div class="flex flex-wrap gap-2">
-            {% for s in scanned_trends %}
-            <div class="bg-surface-container-lowest border border-outline-variant rounded px-3 py-2 flex items-center gap-2">
-                <span class="text-xs font-medium">{{ s.term }}</span>
-                <span class="text-success text-[10px] font-semibold">↗ {{ s.momentum }}%</span>
-            </div>
-            {% endfor %}
-        </div>
-        <p class="text-[10px] text-on-surface-variant mt-2 italic">These are search signals only — they do not guarantee purchase demand. Use as early discovery, not buy signals.</p>
-    </section>
-    {% endif %}
 </div>
 
 <script>
-function sortBy(mode) {
-    // Update active pill
-    ['conflict','risk','window'].forEach(function(id) {
-        var btn = document.getElementById('sort-'+id);
-        if (id === mode) {
-            btn.className = 'flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-primary bg-primary-container text-on-primary-container';
-        } else {
-            btn.className = 'flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant';
-        }
-    });
-
-    var sections = document.querySelectorAll('section');
-    var allCards = [];
-    sections.forEach(function(section) {
-        var container = section.querySelector('.space-y-2');
-        if (!container) return;
-        var cards = Array.from(container.querySelectorAll('a'));
-        cards.forEach(function(card, i) {
-            var name = (card.querySelector('h3')?.textContent || '').toLowerCase();
-            var text = card.textContent || '';
-            var isHigh = text.includes('HIGH CONFLICT');
-            var isFabric = text.includes('Fabric commitment') || text.includes('irreversible');
-            var isFestive = text.includes('Festive') || text.includes('Wedding');
-
-            var score = 0;
-            if (mode === 'conflict') {
-                score = isHigh ? 10 : 0;
-            } else if (mode === 'risk') {
-                score = (isHigh ? 5 : 0) + (isFabric ? 3 : 0) + (isFestive ? 2 : 0);
-            } else if (mode === 'window') {
-                score = isFestive ? 10 : 0;
-            }
-            allCards.push({card: card, score: score, name: name});
-        });
-    });
-
-    allCards.sort(function(a, b) { return b.score - a.score || a.name.localeCompare(b.name); });
-
-    // Rebuild sections
-    var actionSection = document.querySelector('section:first-of-type .space-y-2');
-    var watchingSection = document.querySelectorAll('section')[1]?.querySelector('.space-y-2');
-    if (actionSection) {
-        var actionCards = allCards.filter(function(c) { return c.score >= 5; });
-        actionSection.innerHTML = '';
-        actionCards.forEach(function(c) { actionSection.appendChild(c.card); });
-    }
-    if (watchingSection && mode !== 'conflict') {
-        var watchCards = allCards.filter(function(c) { return c.score < 5; });
-        watchingSection.innerHTML = '';
-        watchCards.forEach(function(c) { watchingSection.appendChild(c.card); });
+{% if live_sources_available %}
+async function refreshLiveSignals() {
+    var btn = document.getElementById('scan-btn');
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Scanning...';
+    btn.disabled = true;
+    try {
+        var resp = await fetch('/api/live-scan');
+        var data = await resp.json();
+        location.reload();
+    } catch(e) {
+        btn.innerHTML = orig;
+        btn.disabled = false;
     }
 }
+{% endif %}
 </script>
 {% endblock %}

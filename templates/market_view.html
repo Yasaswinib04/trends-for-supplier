@@ -2,49 +2,105 @@
 {% block content %}
 <div class="max-w-6xl mx-auto px-6 py-8">
     <h1 class="text-3xl font-semibold mb-1">Market View</h1>
-    <p class="text-sm text-on-surface-variant mb-2">How past decisions performed — and what they tell us about bets in the current queue.</p>
+    <p class="text-sm text-on-surface-variant mb-2">Live price data + past bet outcomes — calibrate your decisions against real market conditions.</p>
 
-    <div class="bg-surface-container-low border border-outline-variant rounded p-4 mb-6 text-sm">
-        <span class="font-semibold">What this page shows:</span> Your last 4 trend bets and their real outcomes. Use this to calibrate — if a past bet failed for reasons that also apply to a current trend, that should reduce your confidence. If it succeeded, that's a positive signal.
+    <!-- ═══ Live Product Deep Dive ═══ -->
+    <div class="bg-surface-container-low border border-outline-variant rounded p-5 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-primary">search</span>
+            <h2 class="text-base font-semibold">Live Product Deep Dive</h2>
+            <span class="text-[10px] bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">live API</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-3">Search any kurti style across Myntra, Ajio, Amazon, Flipkart for real-time prices, discounts, ratings, and stock.</p>
+        <div class="flex gap-2 mb-4">
+            <input type="text" id="dive-query" placeholder="e.g. chanderi silk kurti, block print kurti..." class="flex-1 px-3 py-2 border border-outline-variant rounded text-sm bg-surface text-on-surface" onkeydown="if(event.key==='Enter')deepDive()">
+            <button onclick="deepDive()" class="px-4 py-2 bg-primary text-on-primary text-sm rounded hover:opacity-90">Analyze</button>
+        </div>
+        <div id="dive-results" class="hidden">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dive-grid"></div>
+            <div id="dive-noise" class="mt-3"></div>
+            <div id="dive-prices" class="mt-3"></div>
+            <div id="dive-trends" class="mt-3"></div>
+        </div>
     </div>
 
+    <!-- ═══ Live Market Pulse ═══ -->
+    {% if live_pulse.search_signals or live_pulse.marketplace_signals %}
+    <div class="bg-surface-container-lowest border border-outline-variant rounded p-5 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-primary">radar</span>
+            <h2 class="text-base font-semibold">Live Market Scan</h2>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% if live_pulse.search_signals %}
+            <div>
+                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Search Momentum (Google Trends)</span>
+                <div class="flex flex-wrap gap-2 mt-2">
+                    {% for s in live_pulse.search_signals[:6] %}
+                    <div class="bg-surface-container border border-outline-variant rounded px-3 py-1.5 flex items-center gap-2">
+                        <span class="text-xs font-medium">{{ s.term }}</span>
+                        <span class="text-success text-[10px] font-bold">↗ {{ s.momentum }}%</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if live_pulse.price_signals %}
+            <div>
+                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Google Shopping Price Range</span>
+                {% for ps in live_pulse.price_signals %}
+                <div class="mt-2 text-sm">
+                    <p class="font-medium">{{ ps.query }}</p>
+                    <div class="flex gap-2 mt-1">
+                        <span class="bg-surface-container px-2 py-0.5 rounded text-xs">₹{{ ps.low_price }}–₹{{ ps.high_price }}</span>
+                        <span class="text-xs text-on-surface-variant">{{ ps.listings }} listings</span>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ Metrics ═══ -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
             <div class="flex justify-between items-start mb-2">
                 <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Realized Margin</span>
-                <span class="text-tertiary text-sm">📉</span>
+                <span class="text-tertiary text-sm">&#x1f4c9;</span>
             </div>
             <div class="text-2xl font-bold mb-1">42.8%</div>
             <div class="text-sm text-tertiary">-2.2 pts below 45% target</div>
-            <div class="text-xs text-on-surface-variant mt-2">Means: Your bets are making money, but 2 underperforming trends (Linen Blends, Organza) are dragging the average down.</div>
+            <div class="text-xs text-on-surface-variant mt-2">Your bets are making money, but 2 underperforming trends (Linen Blends, Organza) are dragging the average down.</div>
         </div>
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
             <div class="flex justify-between items-start mb-2">
                 <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Sell-Through Speed</span>
-                <span class="text-primary text-sm">⚡</span>
+                <span class="text-primary text-sm">&#x26a1;</span>
             </div>
             <div class="text-2xl font-bold text-primary mb-1">14 days avg</div>
             <div class="text-sm text-on-surface-variant">Target: &lt;21 days</div>
-            <div class="text-xs text-on-surface-variant mt-2">Means: When your bets work, inventory moves fast. Block Print and Chanderi cleared in &lt;14 days. Linen dragged the average up to 21+ days.</div>
+            <div class="text-xs text-on-surface-variant mt-2">When your bets work, inventory moves fast. Block Print and Chanderi cleared in &lt;14 days.</div>
         </div>
         <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
             <div class="flex justify-between items-start mb-2">
                 <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Hit Rate</span>
-                <span class="text-on-surface-variant text-sm">🎯</span>
+                <span class="text-on-surface-variant text-sm">&#x1f3af;</span>
             </div>
             <div class="text-2xl font-bold mb-1">50%</div>
             <div class="text-sm text-on-surface-variant">2 of 4 bets succeeded</div>
             <div class="w-full bg-surface-variant h-1 mt-2 rounded-full overflow-hidden"><div class="bg-primary h-full" style="width:50%"></div></div>
-            <div class="text-xs text-on-surface-variant mt-2">Means: You're right half the time. The two misses (Linen, Organza) share a pattern — narrow customer fit and limited wear occasions.</div>
+            <div class="text-xs text-on-surface-variant mt-2">The two misses (Linen, Organza) share a pattern — narrow customer fit and limited wear occasions.</div>
         </div>
     </div>
 
+    <!-- ═══ Past Bets + Patterns ═══ -->
     <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
-        <!-- Bets grid -->
         <div class="md:col-span-7 space-y-2">
-            <h2 class="text-base font-semibold mb-2">Past Bets · Jan–Jun 2025</h2>
+            <h2 class="text-base font-semibold mb-2">Past Bets &#xb7; Jan&#x2013;Jun 2025</h2>
             {% for bet in [
-                {'name':'Block Print Cotton A-Line','outcome':'Success','margin':48,'sell_through':72,'vel':'Fast','color':'#16a34a','lesson':'Meesho presence is a leading indicator. Tier-2/3 customers buy cotton at ₹399-599.'},
+                {'name':'Block Print Cotton A-Line','outcome':'Success','margin':48,'sell_through':72,'vel':'Fast','color':'#16a34a','lesson':'Meesho presence is a leading indicator. Tier-2/3 customers buy cotton at 399-599.'},
                 {'name':'Chanderi Silk Straight','outcome':'Limited Success','margin':44,'sell_through':58,'vel':'Medium','color':'#d97706','lesson':'Premium demand exists but mass-market gap remains. Needs built-in lining for wash durability.'},
                 {'name':'Organza Embroidered','outcome':'Narrow Win','margin':52,'sell_through':42,'vel':'Slow','color':'#d97706','lesson':'High margin but narrow occasion window. Wedding-only limits volume. Price held at full MRP.'},
                 {'name':'Linen Straight Kurti','outcome':'Underperformed','margin':31,'sell_through':31,'vel':'Stagnant','color':'#dc2626','lesson':'Urban adoption stalled. Geography mismatch — tier-2 coastal demand existed but too small to offset.'},
@@ -53,36 +109,76 @@
                 <div class="flex-1">
                     <div class="flex justify-between items-start mb-1">
                         <div class="text-sm font-semibold">{{ bet.name }}</div>
-                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded border" style="{% if 'Success' in bet.outcome %}background:#94f990;color:#002204;border-color:#006e1c{% elif 'Underperformed' in bet.outcome %}background:#ffdad6;color:#93000a;border-color:#ba1a1a{% else %}background:#ffddb3;color:#2a1700;border-color:#855300{% endif %}">{{ bet.outcome }}</span>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded border" style="{% if 'Success' in bet.outcome %}background:#94f990;color:#002204;border-color:#006e1c{% elif 'Under' in bet.outcome %}background:#ffdad6;color:#93000a;border-color:#ba1a1a{% else %}background:#ffddb3;color:#2a1700;border-color:#855300{% endif %}">{{ bet.outcome }}</span>
                     </div>
-                    <div class="text-[11px] font-mono text-on-surface-variant mb-1">Margin: {{ bet.margin }}% · Sell-through: {{ bet.sell_through }}% · Vel: {{ bet.vel }}</div>
-                    <div class="text-[11px] text-on-surface-variant">💡 <span class="text-tertiary">Lesson:</span> {{ bet.lesson }}</div>
+                    <div class="text-[11px] font-mono text-on-surface-variant mb-1">Margin: {{ bet.margin }}% &#xb7; Sell-through: {{ bet.sell_through }}% &#xb7; Vel: {{ bet.vel }}</div>
+                    <div class="text-[11px] text-on-surface-variant">&#x1f4a1; <span class="text-tertiary">Lesson:</span> {{ bet.lesson }}</div>
                 </div>
             </div>
             {% endfor %}
         </div>
 
-        <!-- Patterns -->
         <div class="md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded p-5">
             <h2 class="text-base font-semibold mb-3">Patterns That Repeat</h2>
             <div class="space-y-3 text-sm">
                 <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #16a34a">
                     <div class="font-semibold text-success mb-1">Cotton + Meesho = High hit rate</div>
-                    <div class="text-xs text-on-surface-variant">Block Print sold 72% at ₹399-599. Meesho reseller activity predicted this. Apply this to current Meesho-strong trends in the queue.</div>
-                    <div class="text-[10px] text-primary mt-1 font-semibold">→ Affects: Bandhani Print, Ajrakh Print</div>
+                    <div class="text-xs text-on-surface-variant">Block Print sold 72% at 399-599. Meesho reseller activity predicted this. Apply to current Meesho-strong trends.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Bandhani Print, Ajrakh Print</div>
                 </div>
                 <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #dc2626">
-                    <div class="font-semibold text-error mb-1">Premium ≠ Value conversion</div>
-                    <div class="text-xs text-on-surface-variant">Chanderi succeeded at premium but failed to convert at mass-market. Nykaa demand doesn't guarantee Meesho demand. This pattern is showing AGAIN in the current decision board.</div>
-                    <div class="text-[10px] text-primary mt-1 font-semibold">→ Affects: Organza, Chanderi Silk, Ikat Anarkali</div>
+                    <div class="font-semibold text-error mb-1">Premium &#x2260; Value conversion</div>
+                    <div class="text-xs text-on-surface-variant">Chanderi succeeded at premium but failed at mass-market. Nykaa demand doesn't guarantee Meesho demand.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Organza, Chanderi Silk, Ikat Anarkali</div>
                 </div>
                 <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #d97706">
                     <div class="font-semibold text-stagnant mb-1">Occasion-wear has narrow windows</div>
-                    <div class="text-xs text-on-surface-variant">Organza sold at full price but only to wedding guests. Year-round buying doesn't work for occasion-specific garments. Launch pre-Diwali/wedding-season only.</div>
-                    <div class="text-[10px] text-primary mt-1 font-semibold">→ Affects: Organza, Ikat Anarkali (festive)</div>
+                    <div class="text-xs text-on-surface-variant">Organza sold at full price but only to wedding guests. Launch pre-Diwali/wedding-season only.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Organza, Ikat Anarkali (festive)</div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+async function deepDive() {
+    var q = document.getElementById('dive-query').value.trim();
+    if (!q) return;
+    var results = document.getElementById('dive-results');
+    var grid = document.getElementById('dive-grid');
+    var noise = document.getElementById('dive-noise');
+    var prices = document.getElementById('dive-prices');
+    var trends = document.getElementById('dive-trends');
+    results.classList.remove('hidden');
+    grid.innerHTML = '<div class="col-span-2 text-center py-4"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Fetching live data...</p></div>';
+    noise.innerHTML = ''; prices.innerHTML = ''; trends.innerHTML = '';
+    try {
+        var resp = await fetch('/api/product-deep-dive?q=' + encodeURIComponent(q));
+        var data = await resp.json();
+        if (data.products && data.products.length > 0) {
+            grid.innerHTML = data.products.map(function(p) {
+                return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs">' +
+                    '<div class="flex justify-between mb-1"><span class="font-semibold truncate flex-1 mr-2">' + (p.name||'').slice(0,40) + '</span><span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">'+p.platform+'</span></div>' +
+                    '<div class="flex gap-3 text-on-surface-variant"><span>₹' + p.price + '</span>' + (p.discount > 0 ? '<span class="text-error">-' + p.discount + '%</span>' : '') + (p.rating > 0 ? '<span>★ ' + p.rating + '</span>' : '') + '<span>' + (p.reviews||0) + ' reviews</span></div>' +
+                    (p.sponsored ? '<span class="text-[10px] text-tertiary mt-1 inline-block">Paid placement</span>' : '') +
+                    '</div>';
+            }).join('');
+        } else {
+            grid.innerHTML = '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No live listings found for "' + q + '". Try a different search term.</div>';
+        }
+        if (data.noise_summary) {
+            noise.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Noise Verdict: </span><span class="font-bold ' + (data.noise_summary.verdict.indexOf('DISTORTED')>=0?'text-error':'text-success') + '">' + data.noise_summary.verdict + '</span>' + (data.noise_summary.flags||[]).map(function(f){return '<div class="text-on-surface-variant mt-1">'+f+'</div>';}).join('') + '</div>';
+        }
+        if (data.price_context) {
+            prices.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Shopping: </span>₹' + data.price_context.price_low + '–₹' + data.price_context.price_high + ' (median ₹' + data.price_context.price_median + ') · ' + data.price_context.listings + ' listings · ' + data.price_context.stores + ' stores</div>';
+        }
+        if (data.trends) {
+            trends.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Trends: </span>' + data.trends.direction + ' · momentum ' + Math.round(data.trends.momentum*100) + '% · ' + (data.trends.live ? 'live' : 'cached') + '</div>';
+        }
+    } catch(e) {
+        grid.innerHTML = '<div class="col-span-2 text-xs text-error py-4 text-center">Error: ' + e.message + '</div>';
+    }
+}
+</script>
 {% endblock %}

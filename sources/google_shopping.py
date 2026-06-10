@@ -16,6 +16,7 @@ Usage:
 
 import json
 import os
+import ssl
 import urllib.request
 import urllib.parse
 from pathlib import Path
@@ -25,6 +26,10 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 CACHE_FILE = DATA_DIR / "google_shopping_cache.json"
 
 SERPAPI_BASE = "https://serpapi.com/search"
+
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
 
 
 def search_google_shopping(query: str, use_cache: bool = True) -> dict:
@@ -62,7 +67,7 @@ def search_google_shopping(query: str, use_cache: bool = True) -> dict:
         url = f"{SERPAPI_BASE}?{params}"
 
         req = urllib.request.Request(url, headers={"User-Agent": "KurtiTrendEngine/1.0"})
-        with urllib.request.urlopen(req, timeout=15) as resp:
+        with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
             data = json.loads(resp.read())
 
         if data.get("error"):
