@@ -27,10 +27,14 @@ LIVE_SOURCES_AVAILABLE = False
 _get_live_marketplace = None
 _get_google_shopping = None
 _fetch_google_trends_fn = None
+_get_historical_trends = None
+_seed_historical_cache = None
 try:
     from sources.live_marketplace import search_all_platforms as _get_live_marketplace
     from sources.google_shopping import get_price_context_for_trend as _get_google_shopping
     from sources.google_trends import fetch_google_trends as _fetch_google_trends_fn
+    from sources.google_trends import get_historical_trends as _get_historical_trends
+    from sources.google_trends import seed_historical_cache as _seed_historical_cache
     LIVE_SOURCES_AVAILABLE = True
 except ImportError:
     pass
@@ -115,6 +119,19 @@ def _precache_all():
 _precache_thread = threading.Thread(target=_precache_all, daemon=True)
 _precache_thread.start()
 
+# Seed 12-month Google Trends cache in background
+def _seed_trends_cache():
+    if _seed_historical_cache:
+        try:
+            print("📊 Seeding 12-month Google Trends cache...")
+            fetched = _seed_historical_cache()
+            print(f"📊 Historical trends seeded: {fetched} terms")
+        except Exception as e:
+            print(f"⚠️ Trends seed error: {e}")
+
+_trends_thread = threading.Thread(target=_seed_trends_cache, daemon=True)
+_trends_thread.start()
+
 
 # ─── Decision Board ───
 
@@ -147,9 +164,9 @@ def decision_board():
 
 
 def _get_live_pulse():
-    """Aggregate live signals from Google Trends + marketplace APIs for the board."""
+    """Aggregate live signals + 12-month historical trends for the board."""
     pulse = {"search_signals": [], "marketplace_signals": [], "price_signals": [],
-             "scanned": False, "error": None}
+             "historical_trends": [], "scanned": False, "error": None}
     kurti_terms = [
         "chanderi kurti", "organza kurti", "block print kurti", "ajrakh kurti",
         "bandhani kurti", "ikat kurti", "linen kurti", "palazzo kurti set",
@@ -157,48 +174,93 @@ def _get_live_pulse():
         "mirror work kurti", "kota doria kurti", "kalamkari kurti"
     ]
 
-    # Google Trends — try live, fallback to cache
-    if _fetch_google_trends_fn:
+    # ── Historical Trends (12-month data from cache) ──
+    if _get_historical_trends:
         try:
-            gt = _fetch_google_trends_fn(kurti_terms, geo="IN", timeframe="today 3-m",
-                                           use_cache=False)
-            interest = gt.get("interest_data", {})
-            for term, td in interest.items():
-                direction = td.get("direction", "stable")
-                if direction in ("rising", "surging"):
-                    pulse["search_signals"].append({
-                        "term": term, "direction": direction,
-                        "momentum": mimax(99, int((td.get("current", 0) /
-                            max(td.get("peak", 1), 1)) * 100)),
-                        "live": gt.get("live", False),
+            hist = _get_historical_trends()
+            for term, td in hist.items():
+                if "kurti" in term.lower():
+                    monthly = td.get("monthly_values", [])
+                    mx = max(monthly) if monthly else 1
+                    pulse["historical_trends"].append({
+                        "term": term,
+                        "direction": td["direction"],
+                        "trajectory": td.get("year_trajectory", "unknown"),
+                        "current": td["current"],
+                        "peak": td["peak"],
+                        "current_vs_peak": td.get("current_vs_peak_pct", 0),
+                        "growth_8w": td.get("growth_8w_pct", 0),
+                        "monthly": monthly,
+                        "max_monthly": mx,
+                        "seasonality": td.get("seasonality", False),
+                        "peak_month": td.get("peak_month", 0),
+                        "volatility": td.get("volatility", "low"),
+                        "cached_at": td.get("cached_at", "")[:10],
                     })
-            pulse["search_signals"].sort(key=lambda s: -s["momentum"])
+            pulse["historical_trends"].sort(key=lambda h: -abs(h["growth_8w"]))
             pulse["scanned"] = True
         except Exception as e:
-            pulse["error"] = f"Trends: {str(e)[:60]}"
+            pulse["error"] = f"Historical: {str(e)[:60]}"
     else:
+        # Fallback to old-style cache
         try:
             from sources.google_trends import load_cache
             cache = load_cache()
             for ck, cd in cache.items():
                 interest = cd.get("interest_data", {})
                 for term, td in interest.items():
-                    if td.get("direction") in ("rising", "surging") and "kurti" in term.lower():
-                        pulse["search_signals"].append({
-                            "term": term, "direction": td["direction"],
-                            "momentum": mimax(99, int((td.get("current", 0) /
-                                max(td.get("peak", 1), 1)) * 100)),
-                            "live": False,
+                    if "kurti" in term.lower():
+                        monthly = td.get("monthly_values", [])
+                        mx = max(monthly) if monthly else 1
+                        pulse["historical_trends"].append({
+                            "term": term,
+                            "direction": td.get("direction", "stable"),
+                            "trajectory": cd.get("year_trajectory",
+                                       td.get("year_trajectory", "unknown")),
+                            "current": td.get("current", 0),
+                            "peak": td.get("peak", 1),
+                            "current_vs_peak": int((td.get("current", 0) /
+                                max(td.get("peak", 1), 1)) * 100),
+                            "growth_8w": td.get("growth_8w_pct", 0),
+                            "monthly": monthly,
+                            "max_monthly": mx,
+                            "seasonality": td.get("seasonality_detected", False),
+                            "peak_month": td.get("peak_month", 0),
+                            "volatility": "low",
+                            "cached_at": cd.get("cached_at", "")[:10],
                         })
-            pulse["search_signals"].sort(key=lambda s: -s["momentum"])
+            pulse["historical_trends"].sort(key=lambda h: -abs(h["growth_8w"]))
             pulse["scanned"] = True
         except Exception:
             pass
 
-    # Live marketplace — top products across platforms
+    # ── Live Google Trends (current momentum) ──
+    if _fetch_google_trends_fn:
+        try:
+            gt = _fetch_google_trends_fn(kurti_terms, geo="IN", timeframe="today 12-m",
+                                           use_cache=False)
+            interest = gt.get("interest_data", {})
+            for term, td in interest.items():
+                direction = td.get("direction", "stable")
+                if direction in ("rising", "stable"):
+                    pulse["search_signals"].append({
+                        "term": term, "direction": direction,
+                        "momentum": mimax(99, int((td.get("current", 0) /
+                            max(td.get("peak", 1), 1)) * 100)),
+                        "growth_8w": td.get("growth_8w_pct", 0),
+                        "trajectory": td.get("year_trajectory", "unknown"),
+                        "live": gt.get("live", False),
+                    })
+            pulse["search_signals"].sort(key=lambda s: -s["momentum"])
+            pulse["scanned"] = True
+        except Exception as e:
+            pulse["error"] = (pulse.get("error") or "") + f" Trends: {str(e)[:60]}"
+
+    # ── Live Marketplace ──
     if LIVE_SOURCES_AVAILABLE and _get_live_marketplace:
         try:
-            for qt in kurti_terms[:5]:
+            for qt in ["chanderi kurti", "block print kurti", "cotton kurti",
+                        "palazzo kurti set", "anarkali kurti"]:
                 cross = _get_live_marketplace(qt, platforms=["myntra", "ajio"], use_cache=True)
                 for plat, pdata in cross.get("platform_results", {}).items():
                     for p in pdata.get("products", [])[:3]:
@@ -216,10 +278,10 @@ def _get_live_pulse():
         except Exception as e:
             pulse["error"] = (pulse.get("error") or "") + f" Marketplace: {str(e)[:60]}"
 
-    # Google Shopping — price context for top rising terms
+    # ── Google Shopping ──
     if LIVE_SOURCES_AVAILABLE and _get_google_shopping and pulse["search_signals"]:
         try:
-            top_term = pulse["search_signals"][0]["term"] if pulse["search_signals"] else "kurti"
+            top_term = pulse["historical_trends"][0]["term"] if pulse["historical_trends"] else "kurti"
             gs = _get_google_shopping(top_term)
             if gs.get("available"):
                 pulse["price_signals"] = [{
@@ -233,14 +295,9 @@ def _get_live_pulse():
         except Exception:
             pass
 
-    # Deduplicate + cap
-    seen = set()
-    uniq = []
-    for s in pulse["search_signals"]:
-        if s["term"] not in seen:
-            uniq.append(s); seen.add(s["term"])
-    pulse["search_signals"] = uniq[:10]
+    pulse["search_signals"] = pulse["search_signals"][:10]
     pulse["marketplace_signals"] = pulse["marketplace_signals"][:15]
+    pulse["historical_trends"] = pulse["historical_trends"][:15]
     return pulse
 
 
@@ -310,13 +367,43 @@ def api_product_deep_dive():
 
     if _fetch_google_trends_fn:
         try:
-            gt = _fetch_google_trends_fn([query], geo="IN", timeframe="today 3-m",
+            gt = _fetch_google_trends_fn([query], geo="IN", timeframe="today 12-m",
                                            use_cache=False)
             result["trends"] = {
                 "direction": gt.get("trend_direction", "unknown"),
                 "momentum": gt.get("momentum_score", 0),
                 "live": gt.get("live", False),
+                "year_trajectory": gt.get("year_trajectory", "unknown"),
+                "monthly_values": [],
+                "seasonality": False,
             }
+            interest = gt.get("interest_data", {})
+            if query in interest:
+                td = interest[query]
+                result["trends"].update({
+                    "current": td.get("current", 0),
+                    "peak": td.get("peak", 0),
+                    "avg_12m": td.get("avg_12m", 0),
+                    "growth_8w_pct": td.get("growth_8w_pct", 0),
+                    "monthly_values": td.get("monthly_values", []),
+                    "seasonality": td.get("seasonality_detected", False),
+                })
+            elif _get_historical_trends:
+                # Fallback: search all cached historical entries for this term
+                hist = _get_historical_trends()
+                for tname, td in hist.items():
+                    if query.lower() in tname.lower() or tname.lower() in query.lower():
+                        result["trends"].update({
+                            "current": td.get("current", 0),
+                            "peak": td.get("peak", 0),
+                            "avg_12m": td.get("avg_12m", 0),
+                            "growth_8w_pct": td.get("growth_8w_pct", 0),
+                            "monthly_values": td.get("monthly_values", []),
+                            "seasonality": td.get("seasonality", False),
+                            "year_trajectory": td.get("year_trajectory", "unknown"),
+                            "matched_term": tname,
+                        })
+                        break
         except Exception:
             pass
 

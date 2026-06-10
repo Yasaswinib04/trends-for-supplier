@@ -15,6 +15,56 @@
         {% endif %}
     </div>
 
+    <!-- ═══════ HISTORICAL TRENDS (12-Month) ═══════ -->
+    {% if live_pulse.historical_trends %}
+    <section class="mb-8" id="historical-section">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-tertiary text-lg">timeline</span>
+            <h2 class="text-lg font-medium">Historical Search Trends · 12 Months</h2>
+            <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{{ live_pulse.historical_trends|length }} terms tracked</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% for h in live_pulse.historical_trends[:10] %}
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3 hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('dive-query')?.setAttribute('value', '{{ h.term }}'); document.getElementById('dive-query')?.focus()">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-semibold text-on-surface truncate">{{ h.term }}</span>
+                        <span class="text-[10px] font-mono ml-2 whitespace-nowrap {% if h.trajectory == 'rising' %}text-success{% elif h.trajectory == 'declining' %}text-error{% else %}text-on-surface-variant{% endif %}">
+                            {% if h.trajectory == 'rising' %}↗{% elif h.trajectory == 'declining' %}↘{% else %}→{% endif %} {{ h.trajectory }}
+                        </span>
+                    </div>
+                    <!-- Mini bar chart: last 12 months -->
+                    <div class="flex items-end gap-[2px] h-8 mb-1.5">
+                        {% set monthly = h.monthly or [] %}
+                        {% set mx = h.max_monthly or 1 %}
+                        {% if monthly and mx|int > 0 %}
+                        {% for v in monthly %}
+                        {% set h_pct = ((v|float / mx|float) * 100)|round|int %}
+                        <div class="flex-1 rounded-t-sm transition-all" style="height:{{ [h_pct, 100]|min }}%;background:{% if h.trajectory == 'rising' %}#16a34a{% elif h.trajectory == 'declining' %}#dc2626{% else %}#c3c6d8{% endif %};opacity:{{ 0.3 + (loop.index / monthly|length) * 0.7 if h.trajectory == 'rising' else 0.6 }};" title="Month {{ loop.index }}: {{ v }}"></div>
+                        {% endfor %}
+                        {% else %}
+                        {% for i in range(12) %}
+                        <div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;" title="No data"></div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3 text-[10px] text-on-surface-variant">
+                        <span>Peak: {{ h.peak }}</span>
+                        <span>Now: {{ h.current }}</span>
+                        <span class="{% if h.growth_8w > 10 %}text-success{% elif h.growth_8w < -10 %}text-error{% else %}text-on-surface-variant{% endif %} font-semibold">
+                            {{ '+' if h.growth_8w > 0 else '' }}{{ '%.0f'|format(h.growth_8w) }}%
+                        </span>
+                        {% if h.seasonality %}<span class="text-tertiary">🔁 seasonal</span>{% endif %}
+                        {% if h.volatility == 'high' %}<span class="text-tertiary">↕ volatile</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-[10px] text-on-surface-variant mt-2 italic">Bar chart shows 12-month search interest pattern. Hover over bars for monthly values. Seasonal = recurring pattern. Volatile = erratic demand.</p>
+    </section>
+    {% endif %}
+
     <!-- ═══════ LIVE MARKET PULSE ═══════ -->
     <section class="mb-8" id="live-pulse-section">
         <div class="flex items-center gap-2 mb-4">

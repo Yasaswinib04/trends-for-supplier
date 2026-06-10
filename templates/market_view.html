@@ -174,7 +174,7 @@ async function deepDive() {
             prices.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Shopping: </span>₹' + data.price_context.price_low + '–₹' + data.price_context.price_high + ' (median ₹' + data.price_context.price_median + ') · ' + data.price_context.listings + ' listings · ' + data.price_context.stores + ' stores</div>';
         }
         if (data.trends) {
-            trends.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Trends: </span>' + data.trends.direction + ' · momentum ' + Math.round(data.trends.momentum*100) + '% · ' + (data.trends.live ? 'live' : 'cached') + '</div>';
+            trends.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Trends (12-month): </span>' + data.trends.direction + ' · momentum ' + Math.round(data.trends.momentum*100) + '% · ' + (data.trends.live ? 'live' : 'cached') + '</div>';
         }
     } catch(e) {
         grid.innerHTML = '<div class="col-span-2 text-xs text-error py-4 text-center">Error: ' + e.message + '</div>';
