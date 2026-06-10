@@ -102,7 +102,7 @@ def fetch_google_trends(search_terms, geo="IN", timeframe="today 12-m",
     """Fetch Google Trends interest for search terms. Returns enriched data
     with 12-month trajectory, monthly aggregates, and seasonality flag."""
     cache = load_cache()
-    cache_key = "|".join(sorted(search_terms))
+    cache_key = f"{timeframe}|{'|'.join(sorted(search_terms))}"
 
     if use_cache and cache_key in cache:
         cached = cache[cache_key]
@@ -121,7 +121,6 @@ def fetch_google_trends(search_terms, geo="IN", timeframe="today 12-m",
         from pytrends.request import TrendReq
         pytrends = TrendReq(hl="en-IN", tz=330)
         pytrends.build_payload(search_terms, cat=0, timeframe=timeframe, geo=geo)
-
         interest_df = pytrends.interest_over_time()
         interest_data = {}
 
@@ -241,15 +240,26 @@ def fetch_google_trends(search_terms, geo="IN", timeframe="today 12-m",
 def seed_historical_cache(force_refresh=False):
     """
     Pre-fetch 12-month Google Trends data for all 15 kurti terms.
-    Called at app startup. Runs in batches of 5 to avoid pytrends rate limits.
+    Uses a single TrendReq connection to minimize rate-limiting.
     Skips terms already in cache unless force_refresh=True.
     """
+    import time
+
     cache = load_cache()
     fetched = 0
     skipped = 0
 
+    try:
+        from pytrends.request import TrendReq
+        pytrends = TrendReq(hl="en-IN", tz=330)
+        time.sleep(2)
+    except Exception:
+        pytrends = None
+
     for batch_idx, batch in enumerate(KURTI_TERM_BATCHES):
-        cache_key = "|".join(sorted(batch))
+        timeframe = "today 12-m"
+        cache_key = f"{timeframe}|{'|'.join(sorted(batch))}"
+
         if not force_refresh and cache_key in cache:
             cached = cache[cache_key]
             age = datetime.now() - datetime.fromisoformat(cached.get("cached_at", "2000-01-01"))
@@ -257,27 +267,42 @@ def seed_historical_cache(force_refresh=False):
                 skipped += len(batch)
                 continue
 
+        if pytrends is None:
+            skipped += len(batch)
+            continue
+
         try:
-            fetch_google_trends(batch, geo="IN", timeframe="today 12-m",
-                               use_cache=False)
-            fetched += len(batch)
+            time.sleep(8)  # generous gap between batches
+            pytrends.build_payload(batch, cat=0, timeframe=timeframe, geo="IN")
+            interest_df = pytrends.interest_over_time()
+
+            if interest_df.empty:
+                skipped += len(batch)
+                continue
+
+            # Call fetch_google_trends with use_cache=False to force fresh store
+            result = fetch_google_trends(batch, geo="IN", timeframe=timeframe,
+                                          use_cache=False)
+            interest = result.get("interest_data", {})
+            has_data = any(td.get("current", 0) > 0 for td in interest.values())
+
+            if has_data:
+                fetched += len([t for t in batch if t in interest])
+            else:
+                skipped += len(batch)
+
         except Exception as e:
-            print(f"  ⚠️ Trends batch {batch_idx+1}: {str(e)[:60]}")
+            print(f"  \u26a0\ufe0f Trends batch {batch_idx+1}: {str(e)[:60]}")
             skipped += len(batch)
 
-        # Rate-limit pause between batches
-        if batch_idx < len(KURTI_TERM_BATCHES) - 1:
-            import time
-            time.sleep(2)
-
-    print(f"  📊 Trends cache: {fetched} terms fetched, {skipped} skipped (already cached)")
+    print(f"  \U0001f4ca Trends cache: {fetched} terms fetched, {skipped} skipped (cached/error)")
     return fetched
 
 
 def get_historical_trends():
     """
     Return all cached historical trend data, keyed by individual term.
-    Useful for the Decision Board to show year-long patterns.
+    Falls back to static historical_trends_fallback.json when cache is empty.
     """
     cache = load_cache()
     results = {}
@@ -285,23 +310,60 @@ def get_historical_trends():
     for cache_key, data in cache.items():
         interest = data.get("interest_data", {})
         for term, tdata in interest.items():
-            results[term] = {
-                "current": tdata.get("current", 0),
-                "peak": tdata.get("peak", 0),
-                "avg_12m": tdata.get("avg_12m", 0),
-                "direction": tdata.get("direction", "stable"),
-                "growth_8w_pct": tdata.get("growth_8w_pct", 0),
-                "monthly_values": tdata.get("monthly_values", []),
-                "year_trajectory": tdata.get("year_trajectory", "unknown"),
-                "seasonality": tdata.get("seasonality_detected", False),
-                "peak_month": tdata.get("peak_month", 0),
-                "current_vs_peak_pct": tdata.get("current_vs_peak_pct", 0),
-                "current_vs_avg_pct": tdata.get("current_vs_avg_pct", 0),
-                "volatility": tdata.get("volatility", "low"),
-                "cached_at": data.get("cached_at", ""),
-            }
+            results[term] = _extract_term_data(term, tdata, data)
+
+    if not results:
+        results = _load_fallback_trends()
 
     return results
+
+
+def _load_fallback_trends():
+    """Load realistic static trend data when pytrends is unavailable."""
+    fallback_file = DATA_DIR / "historical_trends_fallback.json"
+    if fallback_file.exists():
+        with open(fallback_file) as f:
+            static = json.load(f)
+        out = {}
+        for term, td in static.items():
+            out[term] = {
+                "current": td.get("current", 0),
+                "peak": td.get("peak", 0),
+                "avg_12m": td.get("avg_12m", 0),
+                "direction": td.get("direction", "stable"),
+                "growth_8w_pct": td.get("growth_8w_pct", 0),
+                "monthly_values": td.get("monthly_values", []),
+                "year_trajectory": td.get("year_trajectory", "unknown"),
+                "seasonality": td.get("seasonality_detected", False),
+                "peak_month": td.get("peak_month", 0),
+                "current_vs_peak_pct": td.get("current_vs_peak_pct", 0),
+                "current_vs_avg_pct": td.get("current_vs_avg_pct", 0),
+                "volatility": td.get("volatility", "low"),
+                "weekly_values": td.get("weekly_values", []),
+                "cached_at": td.get("cached_at", ""),
+                "_fallback": True,
+            }
+        return out
+    return {}
+
+
+def _extract_term_data(term, tdata, source_data):
+    return {
+        "current": tdata.get("current", 0),
+        "peak": tdata.get("peak", 0),
+        "avg_12m": tdata.get("avg_12m", 0),
+        "direction": tdata.get("direction", "stable"),
+        "growth_8w_pct": tdata.get("growth_8w_pct", 0),
+        "monthly_values": tdata.get("monthly_values", []),
+        "year_trajectory": tdata.get("year_trajectory", "unknown"),
+        "seasonality": tdata.get("seasonality_detected", False),
+        "peak_month": tdata.get("peak_month", 0),
+        "current_vs_peak_pct": tdata.get("current_vs_peak_pct", 0),
+        "current_vs_avg_pct": tdata.get("current_vs_avg_pct", 0),
+        "volatility": tdata.get("volatility", "low"),
+        "weekly_values": tdata.get("weekly_values", []),
+        "cached_at": source_data.get("cached_at", ""),
+    }
 
 
 # ─── Internal Helpers ───
@@ -395,7 +457,7 @@ def fetch_timeframe_trends(terms, window="1Y", geo="IN", use_cache=True):
             label = window
 
         result = fetch_google_trends(terms, geo=geo, timeframe=timeframe,
-                                      use_cache=use_cache)
+                                      use_cache=True)
         result["window"] = window
         result["window_label"] = label
         return result

@@ -93,8 +93,8 @@ def search_google_shopping(query: str, use_cache: bool = True) -> dict:
                 "price_display": item.get("price", ""),
                 "rating": float(rating_val) if rating_val else None,
                 "reviews": item.get("reviews", 0),
-                "store": item.get("source", ""),
-                "link": item.get("link", ""),
+                "store": item.get("seller", item.get("source", "")),
+                "link": item.get("link", item.get("product_link", "")),
                 "position": item.get("position", 0),
                 "thumbnail": item.get("thumbnail", ""),
             }

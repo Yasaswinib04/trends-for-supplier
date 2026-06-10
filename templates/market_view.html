@@ -11,11 +11,24 @@
             <h2 class="text-base font-semibold">Live Product Deep Dive</h2>
             <span class="text-[10px] bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">live API</span>
         </div>
-        <p class="text-xs text-on-surface-variant mb-3">Search any kurti style across Myntra, Ajio, Amazon, Flipkart for real-time prices, discounts, ratings, and stock.</p>
-        <div class="flex gap-2 mb-4">
-            <input type="text" id="dive-query" placeholder="e.g. chanderi silk kurti, block print kurti..." class="flex-1 px-3 py-2 border border-outline-variant rounded text-sm bg-surface text-on-surface" onkeydown="if(event.key==='Enter')deepDive()">
-            <button onclick="deepDive()" class="px-4 py-2 bg-primary text-on-primary text-sm rounded hover:opacity-90">Analyze</button>
+        <p class="text-xs text-on-surface-variant mb-3">Click any trend to analyze live pricing, ratings, and noise across Myntra, Ajio, Amazon, Flipkart + Google Shopping.</p>
+        <div class="flex flex-wrap gap-2 mb-3" id="dive-tags">
+            <button onclick="deepDiveTag('chanderi silk kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Chanderi Silk</button>
+            <button onclick="deepDiveTag('block print cotton kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Block Print Cotton</button>
+            <button onclick="deepDiveTag('organza embroidered kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Organza Embroidered</button>
+            <button onclick="deepDiveTag('ajrakh print kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Ajrakh Print</button>
+            <button onclick="deepDiveTag('bandhani kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Bandhani</button>
+            <button onclick="deepDiveTag('fusion palazzo kurti set', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Fusion Palazzo Set</button>
+            <button onclick="deepDiveTag('ikat anarkali kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Ikat Anarkali</button>
+            <button onclick="deepDiveTag('linen straight kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Linen Straight</button>
+            <button onclick="deepDiveTag('chikankari kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Chikankari</button>
+            <button onclick="deepDiveTag('kalamkari kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Kalamkari</button>
         </div>
+        <div class="hidden" id="dive-query-container">
+            <input type="text" id="dive-query" placeholder="Or type any kurti style..." class="px-3 py-2 border border-outline-variant rounded text-sm bg-surface text-on-surface" onkeydown="if(event.key==='Enter')deepDive()">
+            <button onclick="deepDive()" class="px-3 py-2 bg-primary text-on-primary text-sm rounded hover:opacity-90 ml-2">Search</button>
+        </div>
+        <button onclick="var c=document.getElementById('dive-query-container');c.classList.toggle('hidden');if(!c.classList.contains('hidden'))document.getElementById('dive-query').focus()" class="text-[10px] text-primary hover:underline mt-1">or type a custom search...</button>
         <div id="dive-results" class="hidden">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dive-grid"></div>
             <div id="dive-noise" class="mt-3"></div>
@@ -142,6 +155,15 @@
 </div>
 
 <script>
+async function deepDiveTag(query, btn) {
+    document.querySelectorAll('#dive-tags button').forEach(function(b) {
+        b.className = b.className.replace(/border-primary bg-primary-container text-on-primary-container/g, 'border-outline-variant bg-surface-container');
+    });
+    btn.className = btn.className.replace(/border-outline-variant bg-surface-container/g, 'border-primary bg-primary-container text-on-primary-container font-semibold');
+    document.getElementById('dive-query').value = query;
+    await deepDive();
+}
+
 async function deepDive() {
     var q = document.getElementById('dive-query').value.trim();
     if (!q) return;

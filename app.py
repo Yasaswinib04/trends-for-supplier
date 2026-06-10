@@ -339,38 +339,50 @@ def api_historical_trends():
     if _fetch_timeframe_trends:
         try:
             data = _fetch_timeframe_trends(KURTI_TERMS[:5], window=window)
-            terms_data = {}
-            for term, td in data.get("interest_data", {}).items():
-                vals = td.get("weekly_values", [])
-                monthly = td.get("monthly_values", [])
-                terms_data[term] = {
-                    "direction": td.get("direction", "stable"),
-                    "trajectory": td.get("year_trajectory", "unknown"),
-                    "current": td.get("current", 0),
-                    "peak": td.get("peak", 0),
-                    "avg": td.get("avg_12m", 0),
-                    "growth_8w": td.get("growth_8w_pct", 0),
-                    "weekly_values": vals[-8:] if vals else [],
-                    "monthly_values": monthly[-6:] if monthly else [],
+            if data.get("interest_data"):
+                terms_data = {}
+                for term, td in data.get("interest_data", {}).items():
+                    vals = td.get("weekly_values", [])
+                    monthly = td.get("monthly_values", [])
+                    terms_data[term] = {
+                        "direction": td.get("direction", "stable"),
+                        "trajectory": td.get("year_trajectory", "unknown"),
+                        "current": td.get("current", 0),
+                        "peak": td.get("peak", 0),
+                        "avg": td.get("avg_12m", 0),
+                        "growth_8w": td.get("growth_8w_pct", 0),
+                        "weekly_values": vals[-8:] if vals else [],
+                        "monthly_values": monthly[-6:] if monthly else [],
+                        "live": data.get("live", False),
+                    }
+                return jsonify({
+                    "window": window,
+                    "window_label": data.get("window_label", window),
+                    "trends": terms_data,
+                    "overall_direction": data.get("trend_direction", "unknown"),
                     "live": data.get("live", False),
-                }
-            return jsonify({
-                "window": window,
-                "window_label": data.get("window_label", window),
-                "trends": terms_data,
-                "overall_direction": data.get("trend_direction", "unknown"),
-                "live": data.get("live", False),
-            })
+                })
         except Exception as e:
-            return jsonify({"error": str(e)[:100], "window": window}), 500
+            pass  # fall through to fallback
 
-    # Fallback: use get_historical_trends
+    # Fallback: use get_historical_trends (possibly from static JSON)
     if _get_historical_trends:
         hist = _get_historical_trends()
+        is_fallback = any(td.get("_fallback") for td in hist.values())
         terms_data = {}
+
+        # Determine how many monthly bars to show based on window
+        window_months = {"1M": 1, "3M": 3, "6M": 6, "YTD": 6, "1Y": 12}.get(window, 12)
+
         for term, td in hist.items():
             if "kurti" in term.lower():
+                monthly = td.get("monthly_values", [])
                 vals = td.get("weekly_values", [])
+
+                # Slice to window size for fallback data
+                monthly_sliced = monthly[-window_months:] if monthly and is_fallback else monthly
+                weekly_sliced = vals[-min(window_months*2, len(vals)):] if vals and is_fallback else vals[-8:]
+
                 terms_data[term] = {
                     "direction": td.get("direction", "stable"),
                     "trajectory": td.get("year_trajectory", "unknown"),
@@ -378,16 +390,17 @@ def api_historical_trends():
                     "peak": td.get("peak", 0),
                     "avg": td.get("avg_12m", 0),
                     "growth_8w": td.get("growth_8w_pct", 0),
-                    "weekly_values": vals[-8:] if vals else [],
-                    "monthly_values": td.get("monthly_values", [])[-6:],
+                    "weekly_values": weekly_sliced if weekly_sliced else [],
+                    "monthly_values": monthly_sliced,
                     "live": False,
                 }
         return jsonify({
             "window": window,
             "window_label": window,
             "trends": terms_data,
-            "overall_direction": "unknown",
+            "overall_direction": "mixed",
             "live": False,
+            "fallback": is_fallback,
         })
 
     return jsonify({"error": "No trends source available", "window": window}), 503
@@ -401,7 +414,7 @@ def api_product_deep_dive():
     if not query:
         return jsonify({"error": "Missing ?q= query parameter"}), 400
 
-    result = {"query": query, "live": False, "products": [], "price_context": None,
+    result = {"query": query, "live": False, "products": [], "price_context": {},
               "trends": None, "noise_summary": None}
 
     if LIVE_SOURCES_AVAILABLE and _get_live_marketplace:
