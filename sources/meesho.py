@@ -5,13 +5,78 @@ DATA_DIR = Path(__file__).parent.parent / "data"
 MEESHO_FILE = DATA_DIR / "meesho_data.json"
 TRENDS_FILE = DATA_DIR / "cached_trends.json"
 
+try:
+    from sources.browser_scraper import BrowserScraper
+    _BROWSER = BrowserScraper()
+except ImportError:
+    _BROWSER = None
+
 
 def get_meesho_data(trend_id):
+    # Try live browser scrape first
+    products_found = _try_live_scrape(trend_id)
+    if products_found:
+        return _build_from_scraped(products_found)
+
+    # Fall back to static JSON
+    return _get_static_meesho_data(trend_id)
+
+
+def _try_live_scrape(trend_id):
+    """Try to scrape Meesho for this trend. Returns list of product dicts or None."""
+    if not _BROWSER or not _BROWSER.ready:
+        return None
+
+    try:
+        trends = _load_trends()
+        trend = next((t for t in trends if t["id"] == trend_id), None)
+        if not trend:
+            return None
+
+        search_terms = trend.get("search_terms", [trend["name"]])
+        keyword = search_terms[0] if search_terms else trend["name"]
+
+        scraped = _BROWSER.scrape("meesho", keyword, use_cache=True)
+        if scraped and len(scraped) > 0:
+            return scraped
+    except Exception:
+        pass
+    return None
+
+
+def _build_from_scraped(products):
+    """Build the same output schema from scraped products."""
+    prices = [p["price"] for p in products if p.get("price", 0) > 0]
+    ratings = [p["rating"] for p in products if p.get("rating", 0) > 0]
+    now = Path(__file__).parent.parent / "data"
+
+    return {
+        "source": "meesho",
+        "disclaimer": "Live scraped data from Meesho (via Playwright). Prices and availability may change.",
+        "platform_note": "Live scraped from Meesho search results. Data is point-in-time.",
+        "last_updated": __import__("datetime").datetime.now().isoformat(),
+        "products_found": products,
+        "meesho_presence": "strong" if len(products) >= 5 else "emerging" if len(products) >= 1 else "weak",
+        "demand_signal": f"live scraped — {len(products)} products found",
+        "total_units_sold": sum(p.get("reviews", 0) for p in products[:3]),
+        "total_resellers": 0,
+        "avg_rating": round(sum(ratings) / max(len(ratings), 1), 2) if ratings else 0,
+        "reseller_growth_accelerating": False,
+        "accelerating_count": 0,
+        "regions_covered": ["pan-India"],
+        "region_count": 1,
+        "price_points": sorted(prices) if prices else [],
+        "price_sensitivity_flag": "high" if prices and min(prices) < 300 else "normal",
+        "_live_scraped": True,
+    }
+
+
+def _get_static_meesho_data(trend_id):
+    """Original static JSON fallback."""
     with open(MEESHO_FILE) as f:
         data = json.load(f)
-    with open(TRENDS_FILE) as f:
-        trends = json.load(f)
 
+    trends = _load_trends()
     trend = next((t for t in trends if t["id"] == trend_id), None)
     if not trend:
         return {"source": "meesho", "error": "Trend not found", "products_found": []}
@@ -89,6 +154,11 @@ def get_meesho_data(trend_id):
 
 def low_rating_risk(products):
     return any(p["rating"] < 3.5 and int(p["review_count"]) > 500 for p in products)
+
+
+def _load_trends():
+    with open(TRENDS_FILE) as f:
+        return json.load(f)
 
 
 def _extract_low_price(price_band):

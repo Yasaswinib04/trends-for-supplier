@@ -24,6 +24,14 @@ except ImportError:
     _clean_marketplace = None
     SIGNALS_AVAILABLE = False
 
+try:
+    from sources.browser_scraper import BrowserScraper, init_scrapers
+    _BROWSER_SCRAPER = BrowserScraper()
+    SCRAPERS_AVAILABLE = True
+except ImportError:
+    _BROWSER_SCRAPER = None
+    SCRAPERS_AVAILABLE = False
+
 LIVE_SOURCES_AVAILABLE = False
 _get_live_marketplace = None
 _get_google_shopping = None
@@ -161,6 +169,26 @@ def _seed_amazon_cache():
 _amazon_thread = threading.Thread(target=_seed_amazon_cache, daemon=True)
 _amazon_thread.start()
 
+# Scrapers initialized lazily on first request (Flask debug reloader kills
+# module-level threads, so we init on demand instead)
+_scrapers_init_done = threading.Event()
+
+
+def _init_browser_scrapers():
+    if SCRAPERS_AVAILABLE and not _scrapers_init_done.is_set():
+        try:
+            init_scrapers()
+            _scrapers_init_done.set()
+        except Exception as e:
+            print(f"  \u26a0\ufe0f Browser scrapers init: {e}")
+
+
+def _ensure_scrapers():
+    """Start scraper init in background on first call."""
+    if SCRAPERS_AVAILABLE and not _scrapers_init_done.is_set():
+        t = threading.Thread(target=_init_browser_scrapers, daemon=True)
+        t.start()
+
 
 # ─── Decision Board ───
 
@@ -192,6 +220,7 @@ def decision_board():
 
 @app.route("/scan")
 def scan():
+    _ensure_scrapers()
     live_pulse = _get_live_pulse()
     return render_template("scan.html",
         live_pulse=live_pulse,
@@ -327,6 +356,26 @@ def _get_live_pulse():
         except Exception as e:
             pulse["error"] = (pulse.get("error") or "") + f" Amazon: {str(e)[:60]}"
 
+    # ── Flipkart (Browser Scraping) ──
+    if SCRAPERS_AVAILABLE and _BROWSER_SCRAPER and _BROWSER_SCRAPER.ready:
+        try:
+            fk = _BROWSER_SCRAPER.scrape("flipkart", "kurti ethnic women", use_cache=True)
+            for p in fk[:8]:
+                if p.get("price", 0) > 0:
+                    pulse["marketplace_signals"].append({
+                        "term": "kurti", "platform": "flipkart",
+                        "name": (p.get("name") or "")[:50],
+                        "price": p.get("price", 0),
+                        "discount": p.get("discount_percentage", 0),
+                        "rating": p.get("rating", 0),
+                        "reviews": p.get("reviews", 0),
+                        "stock": p.get("stock_status", "In stock"),
+                        "sponsored": False,
+                    })
+            pulse["scanned"] = True
+        except Exception:
+            pass
+
     # ── Google Shopping ──
     if LIVE_SOURCES_AVAILABLE and _get_google_shopping:
         top_term = None
@@ -364,6 +413,7 @@ def mimax(limit, val):
 @app.route("/api/live-scan")
 def api_live_scan():
     """API endpoint: trigger a live market scan and return results as JSON."""
+    _ensure_scrapers()
     pulse = _get_live_pulse()
     return jsonify(pulse)
 

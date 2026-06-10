@@ -40,7 +40,7 @@ The engine synthesizes **6 data sources** across 3 layers:
 | **Meesho** | Tier 2/3/4 ₹199–500 | Reseller growth = leading indicator for mass penetration |
 | **Internal POS** | Your stores (ground truth) | Past sell-through, margins, returns — the anchor |
 
-### Market Intel Sources
+### Market Intel Sources (Live APIs)
 
 | Source | Data | Integration |
 |---|---|---|
@@ -49,6 +49,16 @@ The engine synthesizes **6 data sources** across 3 layers:
 | **Competitor Meta Ads** | Instagram/Facebook ad activity by brand | Briefing page — who's advertising what, how long, at what price |
 | **YouTube Social Buzz** | Kurti haul video counts, affiliate link density | Briefing page — creator-driven vs organic demand signal |
 | **Google Trends** | 12-month search interest (live pytrends + fallback JSON) | Historical trend bars, festive season YoY comparison |
+
+### Browser Automation (Playwright) — New
+
+| Marketplace | Data | Role |
+|---|---|---|
+| **Flipkart** | Live products, prices, discounts, brands | **New source** — fills a gap where we had zero data |
+| **Meesho** | Live products, prices, ratings | **Replaces static JSON** — Meesho has no API, scraping is the only way |
+| **Myntra** | Live products, prices, discounts | **Fallback** — supplements cached Myntra data |
+
+Browser automations run in a background thread (Node.js Playwright via subprocess). If Node.js is not installed, the app falls back gracefully to cached JSON. Startup is fully automatic — `pip install -r requirements.txt && python3 app.py` is still the only command.
 
 ### Noise-Cleaning Pre-Processing
 
@@ -66,32 +76,22 @@ Before data reaches the LLM, every product passes through a 6-tier discount cont
 ## Architecture
 
 ```
-┌────────────────────────────────────────────────────────┐
-│                     Flask App                           │
-│  ┌─────────────────────────────────────────────────┐   │
-│  │              Data Sources (6 layers)             │   │
-│  │  Nykaa │ Myntra/Ajio │ Meesho │ Internal POS   │   │
-│  │  Rainforest (Amazon) │ Google Shopping          │   │
-│  │  Meta Ads │ YouTube Social │ Google Trends      │   │
-│  └──────────────────┬──────────────────────────────┘   │
-│  ┌──────────────────▼──────────────────────────────┐   │
-│  │     Noise Cleaner (signals/noise_cleaner.py)    │   │
-│  │     Discount context, sponsored detection,      │   │
-│  │     price-buzz gap filter                       │   │
-│  └──────────────────┬──────────────────────────────┘   │
-│  ┌──────────────────▼──────────────────────────────┐   │
-│  │     DeepSeek LLM (Chain-of-Thought)             │   │
-│  │     Disagreement Engine Prompt                  │   │
-│  │     Temperature 0.0, JSON mode                  │   │
-│  └──────────────────┬──────────────────────────────┘   │
-│  ┌──────────────────▼──────────────────────────────┐   │
-│  │     Synthesis Cache + SQLite Telemetry          │   │
-│  └──────────────────┬──────────────────────────────┘   │
-│  ┌──────────────────▼──────────────────────────────┐   │
-│  │  Templates: Scan │ Decisions │ Performance      │   │
-│  │  + Briefing (per-trend deep analysis)           │   │
-│  └─────────────────────────────────────────────────┘   │
-└────────────────────────────────────────────────────────┘
+Fourier/
+├── app.py                          # Flask routes + startup
+├── scrapers/                       # Node.js Playwright scrapers (browser automation)
+│   ├── package.json
+│   ├── run.ts                      # Entry: --source=meesho --keyword="cotton kurti"
+│   ├── myntra.ts | meesho.ts | flipkart.ts
+│   └── node_modules/
+├── sources/
+│   ├── browser_scraper.py          # Python → subprocess → Node.js → Playwright
+│   ├── marketplace.py / meesho.py / rainforest.py / google_shopping.py
+│   ├── google_trends.py / nykaa.py / internal_pos.py / meta_ads.py
+│   └── reviews.py
+├── signals/                        # Pre-processing (noise cleaner)
+├── synthesis/                      # LLM engine + prompt
+├── templates/                      # Scan, Decisions, Performance, Briefing
+└── data/                           # Cache files + historical fallback JSON
 ```
 
 ## Key Design Decisions
