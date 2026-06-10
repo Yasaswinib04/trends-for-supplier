@@ -46,8 +46,9 @@ body { font-family: 'IBM Plex Sans', sans-serif; }
 {% block sidebar %}
 <nav class="hidden lg:flex flex-col w-56 border-r border-outline-variant bg-surface shrink-0 h-screen sticky top-0 p-4 gap-2">
     <div class="mb-4"><div class="text-lg font-bold text-primary">Disagreement Engine</div></div>
-    <a href="/" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.endpoint == 'decision_board' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📊 Decision Board</a>
-    <a href="/market-view" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/market-view' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}">📈 Market View</a>
+    <a href="/scan" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/scan' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}"><span class="material-symbols-outlined text-[18px]">radar</span> Scan</a>
+    <a href="/" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.endpoint == 'decision_board' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}"><span class="material-symbols-outlined text-[18px]">gavel</span> Decisions</a>
+    <a href="/performance" class="flex items-center gap-2 px-3 py-2 rounded text-sm font-semibold {% if request.path == '/performance' %}bg-primary text-on-primary{% else %}text-on-surface-variant hover:bg-surface-container{% endif %}"><span class="material-symbols-outlined text-[18px]">insights</span> Performance</a>
 </nav>
 {% endblock %}
 <main class="flex-1 overflow-y-auto">

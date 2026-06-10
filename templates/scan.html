@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+{% block title %}Scan — Market Discovery{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+
+    <div class="flex justify-between items-end mb-6 border-b border-outline-variant pb-4">
+        <div>
+            <h1 class="text-3xl font-semibold text-on-surface mb-1">Scan</h1>
+            <p class="text-sm text-on-surface-variant">Discover what's moving right now — search trends, live Amazon listings, and price signals across retailers.</p>
+        </div>
+        {% if live_sources_available %}
+        <button onclick="refreshLiveSignals()" id="scan-btn" class="flex items-center gap-1 px-4 py-2 bg-primary text-on-primary text-sm rounded-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-base">refresh</span> Scan Market
+        </button>
+        {% endif %}
+    </div>
+
+    <!-- ═══════ LIVE MARKET PULSE ═══════ -->
+    <section class="mb-8" id="live-pulse-section">
+        <div class="flex items-center gap-2 mb-4">
+            <span class="material-symbols-outlined text-primary text-lg">radar</span>
+            <h2 class="text-lg font-medium">Live Market Pulse</h2>
+            <span class="text-[10px] px-2 py-0.5 rounded-full border {% if live_pulse.scanned %}bg-success-container text-on-success-container border-success{% else %}bg-surface-container text-on-surface-variant border-outline-variant{% endif %}">
+                {% if live_pulse.scanned %}live scan{% else %}offline{% endif %}
+            </span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3"><span class="material-symbols-outlined text-sm text-primary">trending_up</span><span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Search Momentum</span></div>
+                {% if live_pulse.search_signals %}
+                <div class="space-y-1.5">
+                    {% for s in live_pulse.search_signals[:8] %}
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-on-surface truncate flex-1 mr-2">{{ s.term }}</span>
+                        <span class="font-mono font-bold {% if s.momentum >= 70 %}text-success{% elif s.momentum >= 40 %}text-tertiary{% else %}text-on-surface-variant{% endif %} whitespace-nowrap">
+                            {% if s.momentum >= 70 %}↗{% elif s.momentum >= 40 %}→{% else %}·{% endif %} {{ s.momentum }}%
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}<p class="text-xs text-on-surface-variant italic">No rising kurti search terms. Run a scan.</p>{% endif %}
+            </div>
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3"><span class="material-symbols-outlined text-sm text-primary">storefront</span><span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Live Listings</span></div>
+                {% if live_pulse.marketplace_signals %}
+                <div class="space-y-2 max-h-64 overflow-y-auto">
+                    {% for m in live_pulse.marketplace_signals[:6] %}
+                    <div class="border-b border-outline-variant pb-1 last:border-0">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-semibold text-on-surface truncate flex-1 mr-2">{{ m.name[:35] }}</span>
+                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant whitespace-nowrap">{{ m.platform }}</span>
+                        </div>
+                        <div class="flex items-center gap-2 text-[10px] text-on-surface-variant mt-0.5">
+                            <span>₹{{ m.price }}</span>
+                            {% if m.discount > 0 %}<span class="text-error">-{{ m.discount }}%</span>{% endif %}
+                            {% if m.rating > 0 %}<span>★ {{ m.rating }}</span>{% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}<p class="text-xs text-on-surface-variant italic">No live marketplace data. Connect APIs to see real-time listings.</p>{% endif %}
+            </div>
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
+                <div class="flex items-center gap-1 mb-3"><span class="material-symbols-outlined text-sm text-primary">payments</span><span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Price View</span></div>
+                {% if live_pulse.price_signals %}
+                {% for ps in live_pulse.price_signals %}
+                <div class="mb-2"><p class="text-[11px] font-semibold text-on-surface mb-1">{{ ps.query }}</p>
+                <div class="flex gap-2 text-xs"><span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.low_price }} low</span><span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.median_price }} med</span><span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.high_price }} high</span></div>
+                <p class="text-[10px] text-on-surface-variant mt-1">{{ ps.listings }} listings across {{ ps.stores }} stores</p></div>
+                {% endfor %}
+                {% else %}<p class="text-xs text-on-surface-variant italic">Run a scan to see live price ranges across retailers.</p>{% endif %}
+            </div>
+        </div>
+        <p class="text-[10px] text-on-surface-variant mt-3 italic">Search signals from Google Trends. Marketplace data from live APIs (Amazon.in via Rainforest). These are early indicators — they do not guarantee purchase demand.</p>
+    </section>
+
+    <!-- ═══════ PRODUCT DEEP DIVE ═══════ -->
+    <div class="bg-surface-container-low border border-outline-variant rounded p-5 mb-6">
+        <div class="flex items-center gap-2 mb-3">
+            <span class="material-symbols-outlined text-primary">search</span>
+            <h2 class="text-base font-semibold">Live Product Deep Dive</h2>
+            <span class="text-[10px] bg-primary-container text-on-primary-container px-2 py-0.5 rounded-full">live API</span>
+        </div>
+        <p class="text-xs text-on-surface-variant mb-3">Click any trend to analyze live pricing, ratings, and noise across Amazon.in + Google Shopping.</p>
+        <div class="flex flex-wrap gap-2 mb-3">
+            <button onclick="deepDiveTag('chanderi silk kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Chanderi Silk</button>
+            <button onclick="deepDiveTag('block print cotton kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Block Print Cotton</button>
+            <button onclick="deepDiveTag('organza embroidered kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Organza Embroidered</button>
+            <button onclick="deepDiveTag('ajrakh print kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Ajrakh Print</button>
+            <button onclick="deepDiveTag('bandhani kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Bandhani</button>
+            <button onclick="deepDiveTag('fusion palazzo kurti set', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Fusion Palazzo Set</button>
+            <button onclick="deepDiveTag('ikat anarkali kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Ikat Anarkali</button>
+            <button onclick="deepDiveTag('linen straight kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Linen Straight</button>
+            <button onclick="deepDiveTag('chikankari kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Chikankari</button>
+            <button onclick="deepDiveTag('kalamkari kurti', this)" class="text-[11px] px-3 py-1.5 rounded-full border border-outline-variant bg-surface-container hover:border-primary hover:bg-surface-container-high transition-colors">Kalamkari</button>
+        </div>
+        <div class="hidden" id="dive-query-container">
+            <input type="text" id="dive-query" placeholder="Or type any kurti style..." class="px-3 py-2 border border-outline-variant rounded text-sm bg-surface text-on-surface" onkeydown="if(event.key=='Enter')deepDive()">
+            <button onclick="deepDive()" class="px-3 py-2 bg-primary text-on-primary text-sm rounded hover:opacity-90 ml-2">Search</button>
+        </div>
+        <button onclick="var c=document.getElementById('dive-query-container');c.classList.toggle('hidden');if(!c.classList.contains('hidden'))document.getElementById('dive-query').focus()" class="text-[10px] text-primary hover:underline mt-1">or type a custom search...</button>
+        <div id="dive-results" class="hidden mt-4">
+            <div id="dive-header" class="flex items-start justify-between mb-3"></div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dive-grid"></div>
+            <div id="dive-prices" class="mt-3"></div>
+            <div id="dive-trends" class="mt-3"></div>
+        </div>
+    </div>
+
+    <!-- ═══════ HISTORICAL TRENDS ═══════ -->
+    {% if live_pulse.historical_trends %}
+    <section class="mb-8" id="historical-section">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-tertiary text-lg">timeline</span>
+                <h2 class="text-lg font-medium">Historical Search Trends</h2>
+            </div>
+            <div class="flex flex-wrap gap-1">
+                <button onclick="switchWindow('1M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">1M</button>
+                <button onclick="switchWindow('3M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">3M</button>
+                <button onclick="switchWindow('YTD', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">YTD</button>
+                <button onclick="switchWindow('1Y', this)" id="window-1Y" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-primary bg-primary-container text-on-primary-container font-semibold">1Y</button>
+                <span class="text-outline-variant mx-1">|</span>
+                <button onclick="switchFestive('holi', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Holi</button>
+                <button onclick="switchFestive('ramadan', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Ramadan</button>
+                <button onclick="switchFestive('diwali', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Diwali</button>
+                <button onclick="switchFestive('summer', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Summer</button>
+            </div>
+        </div>
+        <div id="historical-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% for h in live_pulse.historical_trends[:10] %}
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3">
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-sm font-semibold text-on-surface truncate">{{ h.term }}</span>
+                        <span class="text-[10px] font-mono ml-2 whitespace-nowrap {% if h.trajectory == 'rising' %}text-success{% elif h.trajectory == 'declining' %}text-error{% else %}text-on-surface-variant{% endif %}">
+                            {% if h.trajectory == 'rising' %}↗{% elif h.trajectory == 'declining' %}↘{% else %}→{% endif %} {{ h.trajectory }}
+                        </span>
+                    </div>
+                    <div class="flex items-end gap-[2px] h-8 mb-1.5">
+                        {% set monthly = h.monthly or [] %}
+                        {% set mx = h.max_monthly or 1 %}
+                        {% if monthly and mx|int > 0 %}
+                        {% for v in monthly %}
+                        {% set h_pct = ((v|float / mx|float) * 100)|round|int %}
+                        <div class="flex-1 rounded-t-sm transition-all" style="height:{{ [h_pct, 100]|min }}%;background:{% if h.trajectory == 'rising' %}#16a34a{% elif h.trajectory == 'declining' %}#dc2626{% else %}#c3c6d8{% endif %};opacity:{{ 0.3 + (loop.index / monthly|length) * 0.7 if h.trajectory == 'rising' else 0.6 }};" title="Month {{ loop.index }}: {{ v }}"></div>
+                        {% endfor %}
+                        {% else %}
+                        {% for i in range(12) %}
+                        <div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;" title="No data"></div>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                    <div class="flex items-center gap-3 text-[10px] text-on-surface-variant" id="meta-{{ loop.index }}">
+                        <span>Peak: {{ h.peak }}</span><span>Now: {{ h.current }}</span>
+                        <span class="font-semibold">{{ '+' if h.growth_8w > 0 else '' }}{{ '%.0f'|format(h.growth_8w) }}%</span>
+                        {% if h.seasonality %}<span class="text-tertiary">seasonal</span>{% endif %}
+                        {% if h.volatility == 'high' %}<span class="text-tertiary">volatile</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="text-[10px] text-on-surface-variant mt-2 italic" id="historical-note">Bar chart shows monthly search interest pattern. Toggle time windows above to adjust the view.</p>
+    </section>
+    {% endif %}
+</div>
+
+<script>
+{% if live_sources_available %}
+async function refreshLiveSignals() {
+    var btn = document.getElementById('scan-btn');
+    var orig = btn.innerHTML;
+    btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Scanning...';
+    btn.disabled = true;
+    try { await fetch('/api/live-scan'); location.reload(); }
+    catch(e) { btn.innerHTML = orig; btn.disabled = false; }
+}
+{% endif %}
+
+async function deepDiveTag(query, btn) {
+    document.querySelectorAll('#dive-results + div button, .flex-wrap button').forEach(function(b){ if(b.onclick&&b.onclick.toString().includes('deepDiveTag')){ b.className=b.className.replace(/border-primary bg-primary-container text-on-primary-container font-semibold/g,'border-outline-variant bg-surface-container');}});
+    if(btn) btn.className = btn.className.replace(/border-outline-variant bg-surface-container/g, 'border-primary bg-primary-container text-on-primary-container font-semibold');
+    document.getElementById('dive-query').value = query;
+    await deepDive();
+}
+
+async function deepDive() {
+    var q = document.getElementById('dive-query').value.trim(); if(!q) return;
+    var r = document.getElementById('dive-results'); r.classList.remove('hidden');
+    var g = document.getElementById('dive-grid'), h = document.getElementById('dive-header'), p = document.getElementById('dive-prices'), t = document.getElementById('dive-trends');
+    g.innerHTML = '<div class="col-span-2 text-center py-4"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Fetching live data...</p></div>';
+    h.innerHTML=p.innerHTML=t.innerHTML='';
+    try{
+        var resp = await fetch('/api/product-deep-dive?q='+encodeURIComponent(q));
+        var data = await resp.json();
+        if(data.products&&data.products.length>0){
+            g.innerHTML=data.products.map(function(p){return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><div class="flex justify-between mb-1"><span class="font-semibold truncate flex-1 mr-2">'+(p.name||'').slice(0,40)+'</span><span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant">'+p.platform+'</span></div><div class="flex gap-3 text-on-surface-variant"><span>₹'+p.price+'</span>'+(p.discount>0?'<span class="text-error">-'+p.discount+'%</span>':'')+(p.rating>0?'<span>★ '+p.rating+'</span>':'')+'<span>'+(p.reviews||0)+' reviews</span></div>'+(p.sponsored?'<span class="text-[10px] text-tertiary mt-1 inline-block">Paid placement</span>':'')+'</div>';}).join('');
+        }else{g.innerHTML='<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No live listings found. Try a different search term.</div>';}
+        if(data.noise_summary){ var d=!!(data.noise_summary.verdict.indexOf('DISTORTED')>=0||data.noise_summary.verdict.indexOf('NOISE')>=0); h.innerHTML='<span class="text-xs text-on-surface-variant">'+data.products.length+' live Amazon products</span><span class="text-[10px] px-2 py-1 rounded-full border font-bold '+(d?'bg-error-container text-on-error-container border-error':'bg-success-container text-on-success-container border-success')+'">'+data.noise_summary.verdict+'</span>';}
+        else{h.innerHTML='<span class="text-xs text-on-surface-variant">'+data.products.length+' live Amazon products</span>';}
+        if(data.price_context){p.innerHTML='<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Shopping: </span>₹'+data.price_context.price_low+'–₹'+data.price_context.price_high+' (median ₹'+data.price_context.price_median+') · '+data.price_context.listings+' listings · '+data.price_context.stores+' stores</div>';}
+        if(data.trends){t.innerHTML='<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Trends (12-month): </span>'+data.trends.direction+' · momentum '+Math.round(data.trends.momentum*100)+'% · '+(data.trends.live?'live':'cached')+'</div>';}
+    }catch(e){g.innerHTML='<div class="col-span-2 text-xs text-error py-4 text-center">Error: '+e.message+'</div>';}
+}
+
+var _activeWindow='1Y',_activeFestive='';
+function highlightPill(btn){
+    document.querySelectorAll('#historical-section button').forEach(function(b){
+        if(b===btn) b.className=b.className.replace(/border-outline-variant bg-surface-container text-on-surface-variant/g,'border-primary bg-primary-container text-on-primary-container font-semibold');
+        else if(b.getAttribute('onclick')&&(b.getAttribute('onclick').startsWith('switchWindow')||b.getAttribute('onclick').startsWith('switchFestive'))) b.className=b.className.replace(/border-primary bg-primary-container text-on-primary-container font-semibold/g,'border-outline-variant bg-surface-container text-on-surface-variant');
+    });
+}
+async function switchWindow(w,btn){highlightPill(btn);_activeWindow=w;_activeFestive='';loadHistoricalData({window:w});}
+async function switchFestive(f,btn){highlightPill(btn);_activeFestive=f;_activeWindow='';loadHistoricalData({festive:f});}
+async function loadHistoricalData(params){
+    var g=document.getElementById('historical-grid');if(!g)return;
+    g.innerHTML='<div class="col-span-2 text-center py-8"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Loading...</p></div>';
+    var qs=Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+    try{
+        var resp=await fetch('/api/historical-trends?'+qs);var data=await resp.json();
+        if(data.comparison){renderFestiveComparison(data);return;}
+        var trends=data.trends||{};var entries=Object.entries(trends);
+        if(!entries.length){g.innerHTML='<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No trend data for this window.</div>';return;}
+        document.getElementById('historical-note').textContent='Showing '+(data.window_label||data.window)+' data.';
+        g.innerHTML=entries.slice(0,10).map(function(e,i){var term=e[0],td=e[1],traj=td.trajectory||td.direction||'stable',monthly=td.monthly_values||[],maxV=Math.max.apply(null,monthly.concat([1]));
+            var bars=monthly.map(function(v,j){var pct=Math.round((v/maxV)*100),c=traj==='rising'?'#16a34a':traj==='declining'?'#dc2626':'#c3c6d8',o=traj==='rising'?0.3+(j/monthly.length)*0.7:0.6;return '<div class="flex-1 rounded-t-sm" style="height:'+Math.min(pct,100)+'%;background:'+c+';opacity:'+o+';" title="Period '+(j+1)+': '+v+'"></div>';}).join('')||('<div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;"></div>').repeat(12);
+            return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3"><div class="flex-1 min-w-0"><div class="flex items-center justify-between mb-1"><span class="text-sm font-semibold text-on-surface truncate">'+term+'</span><span class="text-[10px] font-mono ml-2 whitespace-nowrap '+(traj==='rising'?'text-success':traj==='declining'?'text-error':'text-on-surface-variant')+'">'+(traj==='rising'?'↗':traj==='declining'?'↘':'→')+' '+traj+'</span></div><div class="flex items-end gap-[2px] h-8 mb-1.5">'+bars+'</div><div class="flex items-center gap-3 text-[10px] text-on-surface-variant"><span>Peak: '+(td.peak||0)+'</span><span>Now: '+(td.current||0)+'</span><span class="'+(td.growth_8w>10?'text-success':td.growth_8w<-10?'text-error':'text-on-surface-variant')+' font-semibold">'+(td.growth_8w>0?'+':'')+Math.round(td.growth_8w)+'%</span></div></div></div>';
+        }).join('');
+    }catch(e){g.innerHTML='<div class="col-span-2 text-xs text-error py-4 text-center">Error: '+e.message+'</div>';}
+}
+function renderFestiveComparison(data){
+    var g=document.getElementById('historical-grid');if(!g)return;
+    var label=data.this_year?(data.this_year.label||''):'';
+    document.getElementById('historical-note').textContent=label+': comparing '+(data.this_year?data.this_year.year:'this year')+' vs '+(data.last_year?data.last_year.year:'last year')+'.';
+    var comp=data.comparison||{};
+    g.innerHTML=Object.entries(comp).map(function(e){var cd=e[1],yoy=cd.yoy_change_pct||0,yc=yoy>15?'text-success':yoy<-15?'text-error':'text-on-surface-variant';return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3"><div class="text-sm font-semibold text-on-surface mb-2">'+e[0]+'</div><div class="flex items-center gap-4 text-xs"><div><span class="text-on-surface-variant">This yr avg:</span> <span class="font-bold">'+(cd.this_year_avg||0).toFixed(0)+'</span></div><div><span class="text-on-surface-variant">Last yr avg:</span> <span class="font-bold">'+(cd.last_year_avg||0).toFixed(0)+'</span></div><div class="'+yc+' font-bold">'+(yoy>15?'↗':yoy<-15?'↘':'→')+' '+(yoy>0?'+':'')+yoy.toFixed(0)+'% YoY</div></div></div>';}).join('')||'<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No comparison data.</div>';
+}
+</script>
+<style>.spinner{width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;}@keyframes spin{to{transform:rotate(360deg)}}</style>
+{% endblock %}

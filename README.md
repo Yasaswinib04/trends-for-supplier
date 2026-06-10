@@ -1,181 +1,149 @@
 # Kurti Trend Judgment Engine — Disagreement Engine
 
-A decision-support tool for category buyers at value-fashion retailers in India. It watches 4 data sources, detects where they **disagree**, and forces the buyer to make a judgment call — not by hiding uncertainty behind a score, but by making the conflicts visible.
+A decision-support tool for category buyers at value-fashion retailers in India. It watches 6 data sources, detects where they **disagree**, and forces the buyer to make a judgment call — not by hiding uncertainty behind a score, but by making the conflicts visible.
 
 ## Sharp Edge: The Disagreement Engine
 
-This product does NOT average signals into a confidence score. When Nykaa shows strong premium demand but Meesho shows zero reseller activity, the UI doesn't lower a number — it flags `[CONFLICT DETECTED: HIGH]` and asks the buyer: *"Is this aspirational-only, or can it translate to ₹399-799?"*
+This tool does NOT average signals into a confidence score. When Nykaa shows strong premium demand but Meesho shows zero reseller activity, the UI doesn't lower a number — it flags `[CONFLICT DETECTED: HIGH]` and asks the buyer: *"Is this aspirational-only, or can it translate to ₹399-799?"*
 
-Every claim is traceable to raw data. Every source gets a quality grade (🟢 🟡 🔴). Every conflict has explicit **Proves** / **Cannot prove** tags so the buyer knows exactly what each signal can and cannot conclude. The system says "I don't know" when evidence is thin, and surfaces past store outcomes as calibration.
+Every claim is traceable to raw data. Every source gets a quality grade (🟢 🟡 🔴). Every conflict has explicit **Proves** / **Cannot prove** tags. The system says "I don't know" when evidence is thin.
 
 ## Demo
 
 ```bash
-# 1. Clone and install
 pip install flask python-dotenv openai pytrends
-
-# 2. Set your API key (optional — works without it using cached data)
-export DEEPSEEK_API_KEY=your_key_here
-
-# 3. Run
-python app.py
-
-# Open http://localhost:5000
+cp .env.example .env  # add your API keys
+python3 app.py
+# Open http://localhost:5001
 ```
 
-If the prototype depends on live API calls and you don't have a key, the system will still render using cached synthesis outputs in `data/syntheses_cache.json`.
+## Navigation: 3-Tab Structure
 
----
+| Tab | Purpose | What's inside |
+|---|---|---|
+| **Scan** | Discovery — what's moving right now? | Live Market Pulse (search momentum, Amazon listings, Google Shopping prices), Product Deep Dive (10 preset tags + custom search), Historical Search Trends (1M/3M/YTD/1Y bars with festive presets) |
+| **Decisions** | Execution — which trends need action? | Risk-ranked watchlist (HIGH CONFLICT + Monitoring), sort by conflict/risk/seasonal window. Each trend → Briefing page with Disagreement Engine analysis |
+| **Performance** | Calibration — how did past bets do? | Realized margin, sell-through speed, hit rate metrics. 4 past bet outcomes with lessons. 3 repeatable patterns (Cotton+Meesho, Premium≠Value, Occasion windows) |
 
-## Source Strategy and Why I Chose It
+Each trend has a dedicated **Briefing** page with the full Disagreement Engine analysis, competitor ad activity, YouTube social buzz, source-by-source reasoning trace, and override/commit controls.
 
-The tool synthesizes **4 sources**, chosen to represent fundamentally different customer segments and signal types:
+## Source Strategy
 
-| Source | What It Represents | Why It Matters | What It Can Mislead On |
-|--------|-------------------|----------------|----------------------|
-| **Nykaa Fashion** | Premium D2C demand (₹800–2,500) | Full-price sales = genuine premium demand | Premium appeal ≠ mass-market viability |
-| **Myntra/Ajio** | Organized mass retail (₹399–1,299) | Discount levels reveal if demand is style-driven or price-driven | Sponsored placements and discounting can fake demand |
-| **Meesho** | Price-sensitive mass market (₹199–500), tier-2/3/4 | Reseller network = ground-truth for mass penetration | Zero signal ≠ the trend won't work at value price |
-| **Internal POS** | Our own store sales (ground truth) | Past sell-through, margins, returns, stockouts | Historical data from a *similar* SKU, not the *exact* trend |
+The engine synthesizes **6 data sources** across 3 layers:
 
-### Why these 4?
+### Core Sources (cached + live)
 
-The core insight is that **no single source is sufficient**. Competitors may be late. Social buzz may not convert. Marketplace ranks may be distorted by discounting. And even our own historical data can mislead if the design, fabric, or timing has changed.
+| Source | Segment | Signal |
+|---|---|---|
+| **Nykaa Fashion** | Premium D2C ₹800–2,500 | Full-price demand = genuine willingness to pay |
+| **Myntra/Ajio** | Mass retail ₹399–1,299 | Discount levels reveal price-driven vs style-driven demand |
+| **Meesho** | Tier 2/3/4 ₹199–500 | Reseller growth = leading indicator for mass penetration |
+| **Internal POS** | Your stores (ground truth) | Past sell-through, margins, returns — the anchor |
 
-By triangulating across premium (Nykaa), mass-organized (Myntra), mass-unorganized (Meesho), and internal (POS), the engine can detect the *shape* of a trend's demand curve — and more importantly, detect where the shape breaks down.
+### Market Intel Sources
 
-**Internal POS is the anchor.** External signals tell you what the market is doing. Internal data tells you what YOUR customer actually bought. When Nykaa says "strong demand" but our POS shows 38% sell-through on a similar SKU, that's the most important conflict on the screen.
+| Source | Data | Integration |
+|---|---|---|
+| **Amazon.in (Rainforest API)** | Live products, prices, ratings, stock, sponsored flags | Decision Board live listings, Product Deep Dive, noise-cleaning pipeline |
+| **Google Shopping (SearchAPI.io)** | Live price ranges across retailers | Price View on Scan tab, deep dive price context |
+| **Competitor Meta Ads** | Instagram/Facebook ad activity by brand | Briefing page — who's advertising what, how long, at what price |
+| **YouTube Social Buzz** | Kurti haul video counts, affiliate link density | Briefing page — creator-driven vs organic demand signal |
+| **Google Trends** | 12-month search interest (live pytrends + fallback JSON) | Historical trend bars, festive season YoY comparison |
 
----
+### Noise-Cleaning Pre-Processing
 
-## High-Level Technical Design
+Before data reaches the LLM, every product passes through a 6-tier discount context classifier (`signals/noise_cleaner.py`):
 
-### Architecture
+| Context | Multiplier | When |
+|---|---|---|
+| Genuine Volume Driver | 1.0x | High velocity + good rating at 30-59% discount |
+| Strategic Value Pricing | 1.0x | Low discount + good rating |
+| End-of-Life Fast Mover | 0.5x | Deep discount but was proven at full price |
+| Suspect Discount | 0.5x | Moderate discount + mediocre rating |
+| Subsidized Liquidation | 0.25x | Deep discount IS the demand |
+| Dead Stock Clearance | 0.1x | Not selling even at discount |
+
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────┐
-│                   Flask App                      │
-│                                                  │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐       │
-│  │  Nykaa   │  │  Myntra  │  │  Meesho  │       │
-│  │  Source   │  │  Source   │  │  Source   │       │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘       │
-│       │              │              │             │
-│  ┌────┴──────────────┴──────────────┴─────┐      │
-│  │         Internal POS Source             │      │
-│  └────────────────┬───────────────────────┘      │
-│                   │                              │
-│  ┌────────────────▼───────────────────────┐      │
-│  │     DeepSeek LLM (Chain-of-Thought)    │      │
-│  │     Disagreement Engine Prompt         │      │
-│  └────────────────┬───────────────────────┘      │
-│                   │                              │
-│  ┌────────────────▼───────────────────────┐      │
-│  │        Synthesis Cache (JSON)          │      │
-│  └────────────────┬───────────────────────┘      │
-│                   │                              │
-│  ┌────────────────▼───────────────────────┐      │
-│  │     Jinja2 Templates (Decision Board,  │      │
-│  │     Briefing Screen, Override Modal)   │      │
-│  └────────────────────────────────────────┘      │
-│                                                  │
-│  ┌────────────────────────────────────────┐      │
-│  │     SQLite Telemetry (Override Log)    │      │
-│  └────────────────────────────────────────┘      │
-└─────────────────────────────────────────────────┘
+┌────────────────────────────────────────────────────────┐
+│                     Flask App                           │
+│  ┌─────────────────────────────────────────────────┐   │
+│  │              Data Sources (6 layers)             │   │
+│  │  Nykaa │ Myntra/Ajio │ Meesho │ Internal POS   │   │
+│  │  Rainforest (Amazon) │ Google Shopping          │   │
+│  │  Meta Ads │ YouTube Social │ Google Trends      │   │
+│  └──────────────────┬──────────────────────────────┘   │
+│  ┌──────────────────▼──────────────────────────────┐   │
+│  │     Noise Cleaner (signals/noise_cleaner.py)    │   │
+│  │     Discount context, sponsored detection,      │   │
+│  │     price-buzz gap filter                       │   │
+│  └──────────────────┬──────────────────────────────┘   │
+│  ┌──────────────────▼──────────────────────────────┐   │
+│  │     DeepSeek LLM (Chain-of-Thought)             │   │
+│  │     Disagreement Engine Prompt                  │   │
+│  │     Temperature 0.0, JSON mode                  │   │
+│  └──────────────────┬──────────────────────────────┘   │
+│  ┌──────────────────▼──────────────────────────────┐   │
+│  │     Synthesis Cache + SQLite Telemetry          │   │
+│  └──────────────────┬──────────────────────────────┘   │
+│  ┌──────────────────▼──────────────────────────────┐   │
+│  │  Templates: Scan │ Decisions │ Performance      │   │
+│  │  + Briefing (per-trend deep analysis)           │   │
+│  └─────────────────────────────────────────────────┘   │
+└────────────────────────────────────────────────────────┘
 ```
 
-### Key Design Decisions
+## Key Design Decisions
 
-1. **Chain-of-Thought Prompting**: The LLM is forced to output a `reasoning_trace` array as the FIRST key in its JSON response. It must step through each of the 4 sources individually — summarizing what the data shows, what it proves, what it cannot prove, and how it relates to the other sources — BEFORE generating conflicts, convergences, and the final bet recommendation. This dramatically reduces hallucination and formatting failures compared to a zero-shot approach.
+1. **Chain-of-Thought Prompting**: The LLM outputs `reasoning_trace` as the FIRST key — stepping through all 6 sources with signal/proves/cannot_prove/tension per source before generating conflicts and bet recommendations.
 
-2. **Adversarial Framing**: The system prompt is designed as an adversarial analyst, not a helpful summarizer. It is instructed to lead with disagreements, never average signals into a comfortable score, and explicitly state "I don't know" when evidence is insufficient (fewer than 2 sources with signal → `INSUFFICIENT DATA`).
+2. **Adversarial Framing**: The prompt instructs the LLM to lead with disagreements, never average signals, and surface "I don't know" when evidence is thin.
 
-3. **Response Caching**: LLM responses are cached to `data/syntheses_cache.json` after the first call. This ensures the briefing screens load instantly on subsequent visits and makes the demo reproducible even without an API key.
+3. **Capital-Defensive Bet Sizing**: Only 3 options — `Small Trial`, `Deeper Buy`, `Monitor Only`. No percentages, no unit counts, no confidence scores.
 
-4. **Async Loading**: The briefing page renders a loading skeleton immediately and fetches the LLM synthesis via a background API call (`/api/briefing/<id>`), so the buyer sees the page structure and source data cards instantly while the AI analysis loads.
+4. **Async Loading**: Briefing page renders instantly with spinner; LLM synthesis fetched via JS `/api/briefing/<id>`.
 
-### AI/Tool Choices
+5. **Pre-Caching**: All 8 trend syntheses + Amazon data + Google Trends cached at startup via background threads.
 
-- **DeepSeek Chat** (via OpenAI-compatible API): Chosen for cost-efficiency and strong JSON-mode compliance. The `response_format={"type": "json_object"}` parameter ensures structured output.
-- **Flask + Jinja2**: Lightweight server-rendered app. No frontend framework needed — the tool is a workflow, not a dashboard.
-- **SQLite**: For telemetry/override logging. Zero-config, file-based, perfect for a prototype that needs to persist buyer feedback without infrastructure.
+6. **Disk Cache Fallback**: All live APIs gracefully degrade to cached/static data when keys are missing or rate-limited.
 
----
+## API Keys
 
-## Evaluation and Feedback Loop
+| Key | Service | Status |
+|---|---|---|
+| `DEEPSEEK_API_KEY` | DeepSeek LLM | Required for synthesis |
+| `YOUTUBE_API_KEY` | YouTube Data v3 | Optional — haul video parsing |
+| `GOOGLE_SHOPPING_API_KEY` | SearchAPI.io | Optional — live price ranges |
+| `RAPIDAPI_KEY` | Rainforest API (Amazon.in) | Optional — live product data |
 
-### How the Engine Learns from Buyers
+Without API keys, the app runs on cached/static data with full functionality.
 
-The override modal is not just a "reject" button — it's a structured feedback loop:
+## Evaluation
 
-1. **Buyer overrides the system**: When a buyer disagrees with the AI's recommendation, they select a reason from a curated list:
-   - Supplier lead times
-   - Too premium for our base
-   - Costing/Margin break
-   - Internal design direction
+Run `python3 evals.py` — 5 golden cases testing trap detection:
+- **The Discount Trap**: High Myntra volume at 65% discount ≠ real demand
+- **The Premium Mirage**: Nykaa-only demand may not translate to value-fashion
+- **Mass Only, No Premium Signal**: Meesho volume without premium validation
+- **The Golden Convergence**: All sources align clean → Deeper Buy
+- **The Silent Meesho**: Mass-market gap for niche trends
 
-2. **Data is logged to SQLite**: Every override is timestamped and stored with the trend ID, system recommendation, override reason, and optional free-text notes.
-
-3. **Pattern detection**: The `/api/telemetry` endpoint aggregates override reasons. If "Costing/Margin break" is the #1 reason buyers reject AI calls, it tells us the engine isn't weighing margin data heavily enough.
-
-### What Failure Modes I Tested For
-
-- **Insufficient data**: When fewer than 2 sources have signal, the engine refuses to make a call and displays `INSUFFICIENT DATA` with a prominent warning banner.
-- **LLM formatting failures**: The `_clean_json()` function strips markdown fences and extracts the JSON object even if the LLM wraps it in ```json blocks.
-- **Missing CoT**: If the LLM skips the `reasoning_trace` or provides fewer than 3 steps, the result is flagged with `_missing_trace: true` so we can monitor reliability.
-- **API timeouts**: A 45-second timeout prevents the UI from hanging indefinitely. Errors return a graceful fallback with the error message displayed.
-
-### What Would Improve Next Run
-
-- **A/B testing override rates**: Compare override rates between trends where internal POS data agrees vs. disagrees with external signals. If buyers override more when internal data is absent, it proves the internal source is the most trusted.
-- **Tracking bet outcomes**: Connect approved bets to actual sell-through data 90 days later to measure if the engine's recommendations correlate with commercial success.
-
----
+Assertions verify conflicts detected, trap mentioned, and bet sizing appropriate.
 
 ## Business Measurement
 
-### How to Measure if This Tool Works
-
-The engine's success should be measured on **decision quality**, not prediction accuracy:
-
-| Metric | What It Measures | Target |
-|--------|-----------------|--------|
-| **Markdown Reduction** | Are we buying fewer trends that end up on clearance? | 15-20% reduction in markdown rate vs. prior seasons |
-| **Stockout Avoidance** | Are we catching winners earlier and buying enough? | 10% reduction in stockout incidents on top sellers |
-| **Decision Velocity** | How fast can a buyer make a go/no-go call? | <5 minutes per trend (vs. hours of manual research) |
-| **Override Learning Rate** | Do buyers override the system less over time? | Declining override rate quarter-over-quarter |
-| **Buyer Adoption** | Do buyers actually use the tool daily? | 80%+ of category buyers checking the Decision Board weekly |
-
-### The Core Business Case
-
-A value-fashion retailer buying 200+ styles per season currently makes these decisions using WhatsApp groups, gut feel, and fragmented competitor screenshots. The cost of a wrong bet is either:
-- **Markdown loss**: Buying a trend that doesn't sell → 30-50% margin erosion on clearance
-- **Stockout loss**: Missing a trend that does sell → lost revenue + customer churn
-
-The Disagreement Engine doesn't eliminate wrong bets. It makes them **cheaper** by forcing buyers to see the conflicts before committing capital — and by capturing every override decision so the system improves season over season.
-
----
+| Metric | Target |
+|---|---|
+| Markdown Reduction | 15-20% reduction vs prior seasons |
+| Stockout Avoidance | 10% fewer incidents on top sellers |
+| Decision Velocity | <5 min per trend (vs hours of manual research) |
+| Override Learning Rate | Declining quarter-over-quarter |
+| Buyer Adoption | 80%+ checking weekly |
 
 ## What I Would Build Next
 
-1. **Chrome Extension** ("Bring Your Own Signal"): Let buyers clip trends from Instagram/Pinterest/Myntra while browsing and send them directly to the engine. Solves the real-time data problem without building fragile web scrapers.
-2. **Live Google Trends Integration**: Replace the cached search trend data with live API calls to detect rising search terms as leading indicators.
-3. **Bet Outcome Tracking**: Connect approved bets to actual POS sell-through data 90 days later to create a closed feedback loop.
-
----
-
-## Sources Used
-
-| Source | Type | What it proves | What can mislead |
-|---|---|---|---|
-| **Nykaa Fashion** | Cached (manual collection) | Premium willingness-to-pay. Zero-discount = genuine demand. | Urban/metro bias. 90% of value-fashion customers never shop here. |
-| **Myntra/Ajio** | Cached (manual collection) | Organized retail demand velocity, discount levels reveal price-driven vs style-driven demand. | High rank at deep discount ≠ real demand. Stockouts distort ranks. |
-| **Meesho** | Cached (manual collection) | Mass-market tier-2/3/4 demand. Reseller growth = leading indicator. | High discount % is platform behavior (56-63% off MRP is normal). Short reviews, often incentivized. |
-| **Internal POS** | Cached (past outcomes) | Ground truth — what actually sold in your stores, at what margin, with what return rate. | Past outcomes don't guarantee future results. Sample size may be small. |
-| **Google Trends** | Live (pytrends) via cached fallback | Search momentum for kurti terms. Rising queries = early intent. | Search ≠ purchase. Niche terms may show zero data. Vernacular/voice searches missed. |
-| **Meta Ad Library** | Cached (manual collection) | Competitor conviction — who's backing what with paid budget and for how long. | Competitors may be late, copying, or targeting different customers. |
-| **Customer Reviews** | Curated (manual) | Fit, fabric, wash-durability sentiment from actual buyers. | Small samples, not statistically representative. Reviewer demographics may not match. |
-
-**Cached data** is disclosed in the UI with `disclaimer` fields and `last_updated` timestamps. All mock data is clearly labeled. No real-time scraper dependencies — the app runs without hitting any marketplace API.
-4. **Regional Allocation Intelligence**: Use internal POS regional data (e.g., Bandhani works in Gujarat but dies in South India) to recommend store-level allocation, not just go/no-go.
+1. **Chrome Extension** ("Bring Your Own Signal"): Buyers clip trends from Instagram/Pinterest/Myntra while browsing
+2. **Paid Google Trends API** (SerpAPI/DataForSEO): Replace pytrends with reliable live search data
+3. **Bet Outcome Tracking**: Connect approved bets to actual POS sell-through for closed feedback loop
+4. **Regional Allocation**: Use POS regional data for store-level buy recommendations
+5. **Flipkart/Meesho Live APIs**: Add live data sources beyond Amazon.in

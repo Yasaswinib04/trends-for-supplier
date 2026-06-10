@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="max-w-6xl mx-auto px-6 py-8">
+    <h1 class="text-3xl font-semibold mb-1">Performance</h1>
+    <p class="text-sm text-on-surface-variant mb-2">How your past bets performed — and patterns that should inform your next decisions.</p>
+    <div class="bg-surface-container-low border border-outline-variant rounded p-4 mb-6 text-sm">
+        <span class="font-semibold">What this page shows:</span> Your last 4 trend bets and their real outcomes. Use this to calibrate — if a past bet failed for reasons that also apply to a current trend, that should reduce your confidence. If it succeeded, that's a positive signal.
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Realized Margin</span>
+                <span class="text-tertiary text-sm">&#x1f4c9;</span>
+            </div>
+            <div class="text-2xl font-bold mb-1">42.8%</div>
+            <div class="text-sm text-tertiary">-2.2 pts below 45% target</div>
+            <div class="text-xs text-on-surface-variant mt-2">Your bets are making money, but 2 underperforming trends (Linen Blends, Organza) are dragging the average down.</div>
+        </div>
+        <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Sell-Through Speed</span>
+                <span class="text-primary text-sm">&#x26a1;</span>
+            </div>
+            <div class="text-2xl font-bold text-primary mb-1">14 days avg</div>
+            <div class="text-sm text-on-surface-variant">Target: &lt;21 days</div>
+            <div class="text-xs text-on-surface-variant mt-2">When your bets work, inventory moves fast. Block Print and Chanderi cleared in &lt;14 days.</div>
+        </div>
+        <div class="bg-surface-container-lowest border border-outline-variant rounded p-5">
+            <div class="flex justify-between items-start mb-2">
+                <span class="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wide">Hit Rate</span>
+                <span class="text-on-surface-variant text-sm">&#x1f3af;</span>
+            </div>
+            <div class="text-2xl font-bold mb-1">50%</div>
+            <div class="text-sm text-on-surface-variant">2 of 4 bets succeeded</div>
+            <div class="w-full bg-surface-variant h-1 mt-2 rounded-full overflow-hidden"><div class="bg-primary h-full" style="width:50%"></div></div>
+            <div class="text-xs text-on-surface-variant mt-2">The two misses (Linen, Organza) share a pattern — narrow customer fit and limited wear occasions.</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div class="md:col-span-7 space-y-2">
+            <h2 class="text-base font-semibold mb-2">Past Bets &#xb7; Jan&#x2013;Jun 2025</h2>
+            {% for bet in [
+                {'name':'Block Print Cotton A-Line','outcome':'Success','margin':48,'sell_through':72,'vel':'Fast','color':'#16a34a','lesson':'Meesho presence is a leading indicator. Tier-2/3 customers buy cotton at 399-599.'},
+                {'name':'Chanderi Silk Straight','outcome':'Limited Success','margin':44,'sell_through':58,'vel':'Medium','color':'#d97706','lesson':'Premium demand exists but mass-market gap remains. Needs built-in lining for wash durability.'},
+                {'name':'Organza Embroidered','outcome':'Narrow Win','margin':52,'sell_through':42,'vel':'Slow','color':'#d97706','lesson':'High margin but narrow occasion window. Wedding-only limits volume. Price held at full MRP.'},
+                {'name':'Linen Straight Kurti','outcome':'Underperformed','margin':31,'sell_through':31,'vel':'Stagnant','color':'#dc2626','lesson':'Urban adoption stalled. Geography mismatch — tier-2 coastal demand existed but too small to offset.'},
+            ] %}
+            <div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3 hover:border-primary transition-colors" style="border-left:4px solid {{ bet.color }}">
+                <div class="flex-1">
+                    <div class="flex justify-between items-start mb-1">
+                        <div class="text-sm font-semibold">{{ bet.name }}</div>
+                        <span class="text-[11px] font-semibold px-2 py-0.5 rounded border" style="{% if 'Success' in bet.outcome %}background:#94f990;color:#002204;border-color:#006e1c{% elif 'Under' in bet.outcome %}background:#ffdad6;color:#93000a;border-color:#ba1a1a{% else %}background:#ffddb3;color:#2a1700;border-color:#855300{% endif %}">{{ bet.outcome }}</span>
+                    </div>
+                    <div class="text-[11px] font-mono text-on-surface-variant mb-1">Margin: {{ bet.margin }}% &#xb7; Sell-through: {{ bet.sell_through }}% &#xb7; Vel: {{ bet.vel }}</div>
+                    <div class="text-[11px] text-on-surface-variant">&#x1f4a1; <span class="text-tertiary">Lesson:</span> {{ bet.lesson }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="md:col-span-5 bg-surface-container-lowest border border-outline-variant rounded p-5">
+            <h2 class="text-base font-semibold mb-3">Patterns That Repeat</h2>
+            <div class="space-y-3 text-sm">
+                <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #16a34a">
+                    <div class="font-semibold text-success mb-1">Cotton + Meesho = High hit rate</div>
+                    <div class="text-xs text-on-surface-variant">Block Print sold 72% at 399-599. Meesho reseller activity predicted this. Apply to current Meesho-strong trends.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Bandhani Print, Ajrakh Print</div>
+                </div>
+                <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #dc2626">
+                    <div class="font-semibold text-error mb-1">Premium &#x2260; Value conversion</div>
+                    <div class="text-xs text-on-surface-variant">Chanderi succeeded at premium but failed at mass-market. Nykaa demand doesn't guarantee Meesho demand.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Organza, Chanderi Silk, Ikat Anarkali</div>
+                </div>
+                <div class="border border-outline-variant rounded p-3" style="border-left:3px solid #d97706">
+                    <div class="font-semibold text-stagnant mb-1">Occasion-wear has narrow windows</div>
+                    <div class="text-xs text-on-surface-variant">Organza sold at full price but only to wedding guests. Launch pre-Diwali/wedding-season only.</div>
+                    <div class="text-[10px] text-primary mt-1 font-semibold">&#x2192; Affects: Organza, Ikat Anarkali (festive)</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

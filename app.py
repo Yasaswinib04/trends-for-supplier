@@ -2,7 +2,7 @@ import json
 import os
 import threading
 from pathlib import Path
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect
 
 try:
     from dotenv import load_dotenv
@@ -187,8 +187,14 @@ def decision_board():
     live_pulse = _get_live_pulse()
 
     return render_template("decision_board.html",
-        action_items=action_items, watching=watching,
-        live_pulse=live_pulse, trends=TRENDS,
+        action_items=action_items, watching=watching, trends=TRENDS)
+
+
+@app.route("/scan")
+def scan():
+    live_pulse = _get_live_pulse()
+    return render_template("scan.html",
+        live_pulse=live_pulse,
         live_sources_available=LIVE_SOURCES_AVAILABLE)
 
 
@@ -584,15 +590,16 @@ def api_briefing(trend_id):
     return jsonify(synth)
 
 
-# ─── Market View ───
+# ─── Performance ───
+
+@app.route("/performance")
+def performance():
+    return render_template("performance.html", past_bets=PAST_BETS)
+
 
 @app.route("/market-view")
-def market_view():
-    live_pulse = _get_live_pulse()
-    return render_template("market_view.html",
-        live_pulse=live_pulse,
-        live_sources_available=LIVE_SOURCES_AVAILABLE,
-        past_bets=PAST_BETS)
+def market_view_redirect():
+    return redirect("/performance")
 
 
 # ─── Telemetry ───

@@ -1,171 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Decision Board — Kurti Trend Engine{% endblock %}
+{% block title %}Decisions — Trend Watchlist{% endblock %}
 {% block content %}
-<div class="max-w-6xl mx-auto px-6 py-8">
+<div class="max-w-5xl mx-auto px-6 py-8">
 
     <div class="flex justify-between items-end mb-6 border-b border-outline-variant pb-4">
         <div>
-            <h1 class="text-3xl font-semibold text-on-surface mb-1">Decision Board</h1>
-            <p class="text-sm text-on-surface-variant">Live market signals + your monitored trend watchlist. Ranked by what's most expensive to get wrong.</p>
+            <h1 class="text-3xl font-semibold text-on-surface mb-1">Decisions</h1>
+            <p class="text-sm text-on-surface-variant">Your monitored trend watchlist — ranked by decision risk. Conflicts, fabric commitments, and seasonal windows push items higher.</p>
+            <div class="flex flex-col mt-5">
+                <span class="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2">Sort By</span>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 w-full max-w-2xl">
+                    <button onclick="sortBy('conflict')" id="sort-conflict" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-primary bg-primary-container text-on-primary-container">
+                        <span class="text-[11px] font-bold mb-0.5">Highest Conflict</span>
+                        <span class="text-[10px] opacity-80 leading-tight">Sources disagree most</span>
+                    </button>
+                    <button onclick="sortBy('risk')" id="sort-risk" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+                        <span class="text-[11px] font-bold mb-0.5">Decision Risk</span>
+                        <span class="text-[10px] opacity-80 leading-tight">Cost of being wrong</span>
+                    </button>
+                    <button onclick="sortBy('window')" id="sort-window" class="flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant">
+                        <span class="text-[11px] font-bold mb-0.5">Seasonal Window</span>
+                        <span class="text-[10px] opacity-80 leading-tight">Closest to cutoff</span>
+                    </button>
+                </div>
+            </div>
         </div>
-        {% if live_sources_available %}
-        <button onclick="refreshLiveSignals()" id="scan-btn" class="flex items-center gap-1 px-4 py-2 bg-primary text-on-primary text-sm rounded-lg hover:opacity-90 transition-opacity">
-            <span class="material-symbols-outlined text-base">refresh</span> Scan Market
-        </button>
-        {% endif %}
     </div>
 
-    <!-- ═══════ HISTORICAL TRENDS (Time-Windowed) ═══════ -->
-    {% if live_pulse.historical_trends %}
-    <section class="mb-8" id="historical-section">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
-            <div class="flex items-center gap-2">
-                <span class="material-symbols-outlined text-tertiary text-lg">timeline</span>
-                <h2 class="text-lg font-medium">Historical Search Trends</h2>
-                <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{{ live_pulse.historical_trends|length }} terms</span>
-            </div>
-            <!-- Time window pills -->
-            <div class="flex flex-wrap gap-1">
-                <button onclick="switchWindow('1M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">1M</button>
-                <button onclick="switchWindow('3M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">3M</button>
-                <button onclick="switchWindow('YTD', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">YTD</button>
-                <button onclick="switchWindow('1Y', this)" id="window-1Y" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-primary bg-primary-container text-on-primary-container font-semibold">1Y</button>
-                <span class="text-outline-variant mx-1">|</span>
-                <button onclick="switchFestive('holi', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Holi</button>
-                <button onclick="switchFestive('ramadan', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Ramadan</button>
-                <button onclick="switchFestive('diwali', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Diwali</button>
-                <button onclick="switchFestive('summer', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Summer</button>
-            </div>
-        </div>
-        <div id="historical-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {% for h in live_pulse.historical_trends[:10] %}
-            <div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3 hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('dive-query')?.setAttribute('value', '{{ h.term }}'); document.getElementById('dive-query')?.focus()">
-                <div class="flex-1 min-w-0">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-sm font-semibold text-on-surface truncate">{{ h.term }}</span>
-                        <span class="text-[10px] font-mono ml-2 whitespace-nowrap {% if h.trajectory == 'rising' %}text-success{% elif h.trajectory == 'declining' %}text-error{% else %}text-on-surface-variant{% endif %}">
-                            {% if h.trajectory == 'rising' %}↗{% elif h.trajectory == 'declining' %}↘{% else %}→{% endif %} {{ h.trajectory }}
-                        </span>
-                    </div>
-                    <!-- Mini bar chart -->
-                    <div class="flex items-end gap-[2px] h-8 mb-1.5">
-                        {% set monthly = h.monthly or [] %}
-                        {% set mx = h.max_monthly or 1 %}
-                        {% if monthly and mx|int > 0 %}
-                        {% for v in monthly %}
-                        {% set h_pct = ((v|float / mx|float) * 100)|round|int %}
-                        <div class="flex-1 rounded-t-sm transition-all" style="height:{{ [h_pct, 100]|min }}%;background:{% if h.trajectory == 'rising' %}#16a34a{% elif h.trajectory == 'declining' %}#dc2626{% else %}#c3c6d8{% endif %};opacity:{{ 0.3 + (loop.index / monthly|length) * 0.7 if h.trajectory == 'rising' else 0.6 }};" title="Month {{ loop.index }}: {{ v }}"></div>
-                        {% endfor %}
-                        {% else %}
-                        {% for i in range(12) %}
-                        <div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;" title="No data"></div>
-                        {% endfor %}
-                        {% endif %}
-                    </div>
-                    <div class="flex items-center gap-3 text-[10px] text-on-surface-variant" id="meta-{{ loop.index }}">
-                        <span>Peak: {{ h.peak }}</span>
-                        <span>Now: {{ h.current }}</span>
-                        <span class="{% if h.growth_8w > 10 %}text-success{% elif h.growth_8w < -10 %}text-error{% else %}text-on-surface-variant{% endif %} font-semibold">{{ '+' if h.growth_8w > 0 else '' }}{{ '%.0f'|format(h.growth_8w) }}%</span>
-                        {% if h.seasonality %}<span class="text-tertiary">seasonal</span>{% endif %}
-                        {% if h.volatility == 'high' %}<span class="text-tertiary">volatile</span>{% endif %}
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        <p class="text-[10px] text-on-surface-variant mt-2 italic" id="historical-note">Bar chart shows monthly search interest pattern. Hover over bars for monthly values. Toggle time windows above to adjust the view.</p>
-    </section>
-    {% endif %}
-
-    <!-- ═══════ LIVE MARKET PULSE ═══════ -->
-    <section class="mb-8" id="live-pulse-section">
-        <div class="flex items-center gap-2 mb-4">
-            <span class="material-symbols-outlined text-primary text-lg">radar</span>
-            <h2 class="text-lg font-medium">Live Market Pulse</h2>
-            <span class="text-[10px] px-2 py-0.5 rounded-full border {% if live_pulse.scanned %}bg-success-container text-on-success-container border-success{% else %}bg-surface-container text-on-surface-variant border-outline-variant{% endif %}">
-                {% if live_pulse.scanned %}live scan{% else %}offline{% endif %}
-            </span>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="pulse-grid">
-
-            <!-- Search Signals -->
-            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
-                <div class="flex items-center gap-1 mb-3">
-                    <span class="material-symbols-outlined text-sm text-primary">trending_up</span>
-                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Search Momentum</span>
-                </div>
-                {% if live_pulse.search_signals %}
-                <div class="space-y-1.5">
-                    {% for s in live_pulse.search_signals[:8] %}
-                    <div class="flex items-center justify-between text-xs">
-                        <span class="text-on-surface truncate flex-1 mr-2">{{ s.term }}</span>
-                        <span class="font-mono font-bold {% if s.momentum >= 70 %}text-success{% elif s.momentum >= 40 %}text-tertiary{% else %}text-on-surface-variant{% endif %} whitespace-nowrap">
-                            {% if s.momentum >= 70 %}↗{% elif s.momentum >= 40 %}→{% else %}·{% endif %} {{ s.momentum }}%
-                        </span>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-xs text-on-surface-variant italic">No rising kurti search terms detected. Run a scan.</p>
-                {% endif %}
-            </div>
-
-            <!-- Marketplace Signals -->
-            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
-                <div class="flex items-center gap-1 mb-3">
-                    <span class="material-symbols-outlined text-sm text-primary">storefront</span>
-                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Live Listings</span>
-                </div>
-                {% if live_pulse.marketplace_signals %}
-                <div class="space-y-2 max-h-64 overflow-y-auto">
-                    {% for m in live_pulse.marketplace_signals[:6] %}
-                    <div class="border-b border-outline-variant pb-1 last:border-0">
-                        <div class="flex items-center justify-between">
-                            <span class="text-[11px] font-semibold text-on-surface truncate flex-1 mr-2">{{ m.name[:35] }}</span>
-                            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-surface-container text-on-surface-variant whitespace-nowrap">{{ m.platform }}</span>
-                        </div>
-                        <div class="flex items-center gap-2 text-[10px] text-on-surface-variant mt-0.5">
-                            <span>₹{{ m.price }}</span>
-                            {% if m.discount > 0 %}<span class="text-error">-{{ m.discount }}%</span>{% endif %}
-                            {% if m.rating > 0 %}<span>★ {{ m.rating }}</span>{% endif %}
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-                {% else %}
-                <p class="text-xs text-on-surface-variant italic">No live marketplace data. Connect APIs to see real-time listings.</p>
-                {% endif %}
-            </div>
-
-            <!-- Price Context -->
-            <div class="bg-surface-container-lowest border border-outline-variant rounded p-4">
-                <div class="flex items-center gap-1 mb-3">
-                    <span class="material-symbols-outlined text-sm text-primary">payments</span>
-                    <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Price View</span>
-                </div>
-                {% if live_pulse.price_signals %}
-                {% for ps in live_pulse.price_signals %}
-                <div class="mb-2">
-                    <p class="text-[11px] font-semibold text-on-surface mb-1">{{ ps.query }}</p>
-                    <div class="flex gap-2 text-xs">
-                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.low_price }} low</span>
-                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.median_price }} med</span>
-                        <span class="bg-surface-container px-2 py-0.5 rounded">₹{{ ps.high_price }} high</span>
-                    </div>
-                    <p class="text-[10px] text-on-surface-variant mt-1">{{ ps.listings }} listings across {{ ps.stores }} stores</p>
-                </div>
-                {% endfor %}
-                {% else %}
-                <p class="text-xs text-on-surface-variant italic">Run a scan to see live price ranges across retailers.</p>
-                {% endif %}
-            </div>
-        </div>
-
-        <p class="text-[10px] text-on-surface-variant mt-3 italic">Search signals from Google Trends. Marketplace data from live APIs (Myntra, Ajio, Amazon, Flipkart). These are early indicators — they do not guarantee purchase demand. Always cross-check with your POS data.</p>
-    </section>
-
-    <!-- ═══════ MONITORED TREND WATCHLIST ═══════ -->
+    <!-- High Risk -->
     <section class="mb-8">
         <div class="flex items-center gap-2 mb-4">
             <span class="material-symbols-outlined filled text-error text-lg">warning</span>
@@ -200,7 +62,7 @@
     </section>
 
     <!-- Watching -->
-    <section class="mb-8">
+    <section>
         <div class="flex items-center gap-2 mb-4">
             <span class="material-symbols-outlined filled text-tertiary-container text-lg">schedule</span>
             <h2 class="text-lg font-medium">Watching</h2>
@@ -239,131 +101,34 @@
 </div>
 
 <script>
-{% if live_sources_available %}
-async function refreshLiveSignals() {
-    var btn = document.getElementById('scan-btn');
-    var orig = btn.innerHTML;
-    btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Scanning...';
-    btn.disabled = true;
-    try {
-        await fetch('/api/live-scan');
-        location.reload();
-    } catch(e) {
-        btn.innerHTML = orig;
-        btn.disabled = false;
-    }
-}
-{% endif %}
-
-var _activeWindow = '1Y';
-var _activeFestive = '';
-
-function highlightPill(btn) {
-    document.querySelectorAll('#historical-section button').forEach(function(b) {
-        if (b === btn) {
-            b.className = b.className.replace(/border-outline-variant bg-surface-container text-on-surface-variant/g, 'border-primary bg-primary-container text-on-primary-container font-semibold');
-        } else if (b.getAttribute('onclick') && (b.getAttribute('onclick').startsWith('switchWindow') || b.getAttribute('onclick').startsWith('switchFestive'))) {
-            b.className = b.className.replace(/border-primary bg-primary-container text-on-primary-container font-semibold/g, 'border-outline-variant bg-surface-container text-on-surface-variant');
+function sortBy(mode) {
+    ['conflict','risk','window'].forEach(function(id) {
+        var btn = document.getElementById('sort-'+id);
+        if (id === mode) {
+            btn.className = 'flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-primary bg-primary-container text-on-primary-container';
+        } else {
+            btn.className = 'flex flex-col items-start px-3 py-2 text-left rounded-lg transition-all border-2 border-transparent bg-surface-container hover:bg-surface-container-high text-on-surface-variant';
         }
     });
-}
-
-async function switchWindow(window, btn) {
-    highlightPill(btn);
-    _activeWindow = window;
-    _activeFestive = '';
-    await loadHistoricalData({window: window});
-}
-
-async function switchFestive(festive, btn) {
-    highlightPill(btn);
-    _activeFestive = festive;
-    _activeWindow = '';
-    await loadHistoricalData({festive: festive});
-}
-
-async function loadHistoricalData(params) {
-    var grid = document.getElementById('historical-grid');
-    if (!grid) return;
-    grid.innerHTML = '<div class="col-span-2 text-center py-8"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Loading...</p></div>';
-
-    var qs = Object.keys(params).map(function(k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
-    try {
-        var resp = await fetch('/api/historical-trends?' + qs);
-        var data = await resp.json();
-
-        if (data.comparison) {
-            // Festive comparison: show YoY data
-            renderFestiveComparison(data);
-            return;
-        }
-
-        var trends = data.trends || {};
-        var entries = Object.entries(trends);
-        if (entries.length === 0) {
-            grid.innerHTML = '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No trend data for this window. Try a longer range.</div>';
-            return;
-        }
-
-        var note = document.getElementById('historical-note');
-        if (note) note.textContent = 'Showing ' + (data.window_label || data.window) + ' data. Hover over bars for values. Toggle time windows above to adjust the view.';
-
-        grid.innerHTML = entries.slice(0, 10).map(function(e, i) {
-            var term = e[0], td = e[1];
-            var traj = td.trajectory || td.direction || 'stable';
-            var monthly = td.monthly_values || [];
-            var maxV = Math.max.apply(null, monthly.concat([1]));
-            var bars = monthly.map(function(v, j) {
-                var pct = Math.round((v / maxV) * 100);
-                var color = traj === 'rising' ? '#16a34a' : traj === 'declining' ? '#dc2626' : '#c3c6d8';
-                var opacity = traj === 'rising' ? 0.3 + (j/monthly.length)*0.7 : 0.6;
-                return '<div class="flex-1 rounded-t-sm" style="height:' + Math.min(pct,100) + '%;background:' + color + ';opacity:' + opacity + ';" title="Period ' + (j+1) + ': ' + v + '"></div>';
-            }).join('') || ('<div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;"></div>').repeat(12);
-
-            var growth = td.growth_8w || 0;
-            var growthColor = growth > 10 ? 'text-success' : growth < -10 ? 'text-error' : 'text-on-surface-variant';
-
-            return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3">' +
-                '<div class="flex-1 min-w-0">' +
-                '<div class="flex items-center justify-between mb-1">' +
-                '<span class="text-sm font-semibold text-on-surface truncate">' + term + '</span>' +
-                '<span class="text-[10px] font-mono ml-2 whitespace-nowrap ' + (traj==='rising'?'text-success':traj==='declining'?'text-error':'text-on-surface-variant') + '">' +
-                (traj==='rising'?'↗':traj==='declining'?'↘':'→') + ' ' + traj + '</span></div>' +
-                '<div class="flex items-end gap-[2px] h-8 mb-1.5">' + bars + '</div>' +
-                '<div class="flex items-center gap-3 text-[10px] text-on-surface-variant">' +
-                '<span>Peak: ' + (td.peak||0) + '</span>' +
-                '<span>Now: ' + (td.current||0) + '</span>' +
-                '<span class="' + growthColor + ' font-semibold">' + (growth>0?'+':'') + Math.round(growth) + '%</span></div></div></div>';
-        }).join('');
-    } catch(e) {
-        grid.innerHTML = '<div class="col-span-2 text-xs text-error py-4 text-center">Error loading data: ' + e.message + '</div>';
-    }
-}
-
-function renderFestiveComparison(data) {
-    var grid = document.getElementById('historical-grid');
-    if (!grid) return;
-
-    var note = document.getElementById('historical-note');
-    var label = data.this_year ? (data.this_year.label || '') : '';
-    if (note) note.textContent = label + ': comparing ' + (data.this_year?data.this_year.year:'this year') + ' vs ' + (data.last_year?data.last_year.year:'last year') + ' search interest.';
-
-    var comp = data.comparison || {};
-    var entries = Object.entries(comp);
-
-    grid.innerHTML = entries.map(function(e) {
-        var term = e[0], cd = e[1];
-        var yoy = cd.yoy_change_pct || 0;
-        var yoyColor = yoy > 15 ? 'text-success' : yoy < -15 ? 'text-error' : 'text-on-surface-variant';
-        var arrow = yoy > 15 ? '↗' : yoy < -15 ? '↘' : '→';
-        return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3">' +
-            '<div class="text-sm font-semibold text-on-surface mb-2">' + term + '</div>' +
-            '<div class="flex items-center gap-4 text-xs">' +
-            '<div><span class="text-on-surface-variant">This yr avg:</span> <span class="font-bold">' + (cd.this_year_avg||0).toFixed(0) + '</span></div>' +
-            '<div><span class="text-on-surface-variant">Last yr avg:</span> <span class="font-bold">' + (cd.last_year_avg||0).toFixed(0) + '</span></div>' +
-            '<div class="' + yoyColor + ' font-bold">' + arrow + ' ' + (yoy>0?'+':'') + yoy.toFixed(0) + '% YoY</div>' +
-            '</div></div>';
-    }).join('') || '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No comparison data available.</div>';
+    var sections = document.querySelectorAll('section');
+    var allCards = [];
+    sections.forEach(function(section) {
+        var container = section.querySelector('.space-y-2');
+        if (!container) return;
+        Array.from(container.querySelectorAll('a')).forEach(function(card) {
+            var text = card.textContent || '';
+            var isHigh = text.includes('HIGH CONFLICT');
+            var isFabric = text.includes('Fabric commitment');
+            var isFestive = text.includes('Festive') || text.includes('Wedding');
+            var score = mode==='conflict' ? (isHigh?10:0) : mode==='risk' ? ((isHigh?5:0)+(isFabric?3:0)+(isFestive?2:0)) : (isFestive?10:0);
+            allCards.push({card:card, score:score});
+        });
+    });
+    allCards.sort(function(a,b){ return b.score-a.score || (a.card.querySelector('h3')?.textContent||'').localeCompare(b.card.querySelector('h3')?.textContent||''); });
+    var actionSection = document.querySelector('section:first-of-type .space-y-2');
+    var watchSection = document.querySelectorAll('section')[1]?.querySelector('.space-y-2');
+    if(actionSection){ actionSection.innerHTML=''; allCards.filter(function(c){return c.score>=5;}).forEach(function(c){actionSection.appendChild(c.card);}); }
+    if(watchSection && mode!=='conflict'){ watchSection.innerHTML=''; allCards.filter(function(c){return c.score<5;}).forEach(function(c){watchSection.appendChild(c.card);}); }
 }
 </script>
 {% endblock %}
