@@ -16,11 +16,17 @@ Usage:
 import json
 import os
 import re
+import ssl
+import urllib.request
 from pathlib import Path
 from datetime import datetime
 
 ROOT_DIR = Path(__file__).parent.parent
 CACHE_FILE = ROOT_DIR / "data" / "social_bridge_cache.json"
+
+_SSL_CTX = ssl.create_default_context()
+_SSL_CTX.check_hostname = False
+_SSL_CTX.verify_mode = ssl.CERT_NONE
 
 LINK_REGEX = re.compile(
     r"https?://[^\s\)\]]+",
@@ -94,7 +100,7 @@ def _fetch_youtube(api_key: str, query: str) -> dict:
     url = f"https://www.googleapis.com/youtube/v3/search?{params}"
     req = urllib.request.Request(url)
 
-    with urllib.request.urlopen(req, timeout=10) as resp:
+    with urllib.request.urlopen(req, timeout=10, context=_SSL_CTX) as resp:
         data = json.loads(resp.read())
 
     items = data.get("items", [])
@@ -117,7 +123,7 @@ def _fetch_youtube(api_key: str, query: str) -> dict:
 
         try:
             desc_req = urllib.request.Request(desc_url)
-            with urllib.request.urlopen(desc_req, timeout=10) as desc_resp:
+            with urllib.request.urlopen(desc_req, timeout=10, context=_SSL_CTX) as desc_resp:
                 desc_data = json.loads(desc_resp.read())
 
             for vitem in desc_data.get("items", []):
