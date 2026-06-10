@@ -23,6 +23,16 @@ except ImportError:
     _clean_marketplace = None
     SIGNALS_AVAILABLE = False
 
+LIVE_SOURCES_AVAILABLE = False
+_get_live_marketplace = None
+_get_google_shopping = None
+try:
+    from sources.live_marketplace import search_all_platforms as _get_live_marketplace
+    from sources.google_shopping import get_price_context_for_trend as _get_google_shopping
+    LIVE_SOURCES_AVAILABLE = True
+except ImportError:
+    pass
+
 app = Flask(__name__)
 DATA_DIR = Path(__file__).parent / "data"
 
@@ -48,6 +58,57 @@ with open(PAST_BETS_FILE) as f:
 
 _synth_cache = {}
 
+def _enrich_marketplace_data(trend):
+    """Try live RapidAPI data first, fall back to cached JSON."""
+    base = get_marketplace_data(trend["id"])
+
+    if not LIVE_SOURCES_AVAILABLE or not _get_live_marketplace:
+        return base
+
+    try:
+        terms = trend.get("search_terms", [trend["name"]])
+        query = terms[0] if terms else trend["name"]
+        live = _get_live_marketplace(query, platforms=["myntra", "ajio"],
+                                     use_cache=False)
+        if live and live.get("total_products", 0) > 0:
+            # Merge live data with cached for fields the API doesn't cover
+            all_products = []
+            for platform, pdata in live.get("platform_results", {}).items():
+                for p in pdata.get("products", []):
+                    all_products.append({
+                        "platform": platform,
+                        "name": p["name"],
+                        "brand": p.get("brand", ""),
+                        "price": p["price"],
+                        "discount": p.get("discount", "0%"),
+                        "discount_percentage": p.get("discount_percentage", 0),
+                        "is_sponsored": p.get("is_sponsored", False),
+                        "rank": p.get("rank", 99),
+                        "reviews": p.get("reviews", 0),
+                        "avg_rating": p.get("rating", 0),
+                        "review_velocity": p.get("review_velocity", 0),
+                        "stock_status": p.get("stock_status", "In stock"),
+                        "discount_risk": _discount_risk(p),
+                    })
+
+            if all_products:
+                base["live_data"] = True
+                base["live_products_found"] = all_products
+                base["products_found"] = all_products
+                return base
+    except Exception:
+        pass
+
+    return base
+
+def _discount_risk(product):
+    disc = product.get("discount_percentage", 0)
+    if disc >= 60:
+        return "high"
+    if disc >= 30:
+        return "medium"
+    return "low"
+
 # Pre-cache all trend syntheses in background thread on startup
 def _precache_all():
     print("🔄 Pre-caching syntheses for all 8 trends...")
@@ -56,7 +117,7 @@ def _precache_all():
             continue
         try:
             ny  = get_nykaa_data(t["id"])
-            my  = get_marketplace_data(t["id"])
+            my  = _enrich_marketplace_data(t)
             ms  = get_meesho_data(t["id"])
             pos = get_internal_pos_data(t["id"])
             synth = synthesize(t, ny, my, ms, pos)
@@ -110,14 +171,13 @@ def briefing(trend_id):
         return "Trend not found", 404
 
     nykaa  = get_nykaa_data(trend_id)
-    myntra = get_marketplace_data(trend_id)
+    myntra = _enrich_marketplace_data(trend)
     meesho = get_meesho_data(trend_id)
     reviews = get_review_signals(trend_id)
     internal = get_internal_pos_data(trend_id)
     prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
     past = [b for b in PAST_BETS if b.get("current_trend_id") == trend_id]
 
-    # Render instantly with loading state. JS will call /api/briefing/{id}
     return render_template("briefing_loading.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
         reviews=reviews, internal=internal, prio=prio, label=label, color=color, past_bets=past)
@@ -132,7 +192,7 @@ def api_briefing(trend_id):
         return jsonify(_synth_cache[trend_id])
 
     nykaa  = get_nykaa_data(trend_id)
-    myntra = get_marketplace_data(trend_id)
+    myntra = _enrich_marketplace_data(trend)
     meesho = get_meesho_data(trend_id)
     internal = get_internal_pos_data(trend_id)
     synth = synthesize(trend, nykaa, myntra, meesho, internal)

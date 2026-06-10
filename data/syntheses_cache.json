@@ -685,5 +685,751 @@
     ],
     "_mode": "disagreement_engine",
     "_has_trace": 5
+  },
+  "chanderi-straight": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "2 full-price products at \u20b91,450-2,200, 4.5-4.6\u2605, limited sizes on one, editorial features",
+        "proves": "Premium demand exists at full price; trend originates in premium segment",
+        "cannot_prove": "Whether this demand trickles down to \u20b9699-899; durability concerns not captured",
+        "tension": "Strong premium signal conflicts with weak Meesho presence and internal POS underperformance"
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "2 products at \u20b9899-949, 15-20% discount, rank 3 & 8, 4.1-4.2\u2605, 123 reviews/30d",
+        "proves": "Organic mass-market demand at moderate price; discount is strategic, not distress",
+        "cannot_prove": "Whether demand is style-driven or price-driven; discount is low so likely style-driven",
+        "tension": "Aligns with Nykaa on demand existence but at lower price; conflicts with internal POS underperformance"
+      },
+      {
+        "source": "Meesho",
+        "signal": "1 imitation product at \u20b9349, 1,800+ units, 3.4\u2605, 45 resellers, +8% MoM growth",
+        "proves": "Price-sensitive demand exists at very low price point; emerging volume in tier-2/3/4",
+        "cannot_prove": "Whether demand is for Chanderi silk or just 'look'; imitation product dilutes signal",
+        "tension": "Weak presence and low rating conflict with strong Nykaa/Myntra signals; price gap is large"
+      },
+      {
+        "source": "Internal POS",
+        "signal": "Similar SKU (A-line) sold in 84 stores, 38% sell-through, 22% margin, 35% markdown, 18% return rate",
+        "proves": "Chanderi silk underperformed in our stores; metro-only viability; durability complaints",
+        "cannot_prove": "Whether a straight cut or lower price would perform better; blended fabric might work",
+        "tension": "Directly contradicts external signals of strong demand; HIGH conflict with Nykaa and Myntra"
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Internal POS shows underperformance while Nykaa/Myntra show strong demand; Meesho weak signal suggests limited mass appeal",
+        "key_convergences": "All sources agree Chanderi silk has some demand; Nykaa and Myntra converge on premium-to-mass trickle-down potential"
+      }
+    ],
+    "headline": "\u26a1 Sources disagree: External demand signals strong but internal POS shows underperformance \u2014 trust your own data",
+    "conflicts": [
+      {
+        "severity": "HIGH",
+        "flag": "[CONFLICT DETECTED: HIGH]",
+        "title": "Internal POS underperformance vs. strong external demand signals",
+        "nykaa_says": "Strong premium demand at full price; trend originates here",
+        "myntra_says": "Strong organic demand at moderate discount; strategic pricing",
+        "meesho_says": "Weak presence; imitation product at low price; low rating",
+        "internal_says": "Similar SKU underperformed: 38% sell-through, 22% margin, 18% returns; metro-only viability",
+        "buyer_question": "Will a straight cut at \u20b9699-899 overcome the durability and wash-comfort issues that plagued the A-line version?",
+        "proves": "Chanderi silk has a narrow addressable market within our store base; metro-only viability",
+        "cannot_prove": "Whether a different silhouette or price point would change the outcome",
+        "raw_evidence_keys": [
+          "internal_pos.sell_through_pct",
+          "internal_pos.return_rate_pct",
+          "nykaa.products_found",
+          "marketplace.products_found"
+        ]
+      },
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Meesho weak signal vs. Nykaa/Myntra strong signals",
+        "nykaa_says": "Strong premium demand at full price",
+        "myntra_says": "Strong organic demand at moderate price",
+        "meesho_says": "Weak presence; imitation product at \u20b9349; 3.4\u2605; 45 resellers",
+        "internal_says": "Underperformance in tier-2/3 cities (Lucknow, Patna, Indore)",
+        "buyer_question": "Is the mass-market demand real or limited to premium metro customers?",
+        "proves": "Premium and organized mass segments show demand; Meesho suggests limited tier-2/3/4 traction",
+        "cannot_prove": "Whether Meesho weakness is due to price point mismatch or genuine lack of demand",
+        "raw_evidence_keys": [
+          "meesho.products_found",
+          "nykaa.products_found",
+          "marketplace.products_found",
+          "internal_pos.worst_performing_regions"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Nykaa and Myntra converge on strong demand for Chanderi silk straight kurti",
+        "detail": "Both show high ratings, low discount, and strong presence. Nykaa at premium, Myntra at mass premium.",
+        "proves": "Demand exists at \u20b9899-1,825 with clean signals",
+        "cannot_prove": "Whether this demand translates to our store base given internal POS underperformance"
+      }
+    ],
+    "upside_summary": "Nykaa and Myntra show strong, clean demand for Chanderi silk straight kurti at \u20b9899-1,825 with near-zero discount. The trend has premium origin and trickle-down potential. If durability concerns are addressed (e.g., blended fabric), the style could capture metro and premium mass customers.",
+    "catch_summary": "Internal POS data from a similar A-line SKU shows underperformance: 38% sell-through, 18% returns, and metro-only viability. Meesho presence is weak with an imitation product at \u20b9349, suggesting limited tier-2/3/4 demand. The fabric's delicacy may limit repeat purchases.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe2",
+        "reason": "Full-price products, high ratings, editorial placement \u2014 clean premium signal"
+      },
+      "myntra": {
+        "level": "\ud83d\udfe2",
+        "reason": "Strategic Value Pricing, high rank, good ratings \u2014 clean demand signal"
+      },
+      "meesho": {
+        "level": "\ud83d\udfe1",
+        "reason": "Imitation product, low rating, weak presence \u2014 signal is weak but not noise"
+      },
+      "internal": {
+        "level": "\ud83d\udfe2",
+        "reason": "Ground truth from 84 stores \u2014 high reliability despite negative signal"
+      }
+    },
+    "bet_lean": "Small Trial",
+    "bet_rationale": "External signals are strong but internal POS contradicts. A small batch in metro stores with a blended fabric variant can validate whether the straight cut and lower price point overcome past durability issues.",
+    "key_uncertainty": "Will a straight cut at \u20b9699-899 with a blended fabric (e.g., Chanderi-cotton) achieve better sell-through and lower returns than the previous A-line pure silk version?",
+    "evidence_confidence": "MEDIUM",
+    "watch_triggers": [
+      "Meesho reseller growth accelerates above +15% MoM",
+      "Internal POS sell-through on trial batch exceeds 50% in first 30 days",
+      "Return rate on trial batch stays below 12%",
+      "Nykaa stock pressure increases (limited sizes on more products)"
+    ],
+    "missing_evidence": [
+      "Customer feedback on straight vs. A-line preference",
+      "Data on blended Chanderi-cotton fabric performance",
+      "Competitor pricing and sell-through for similar products at \u20b9699-899"
+    ],
+    "demand_integrity": "Mixed \u2014 Nykaa and Myntra show clean demand, but internal POS and Meesho raise concerns about mass-market viability",
+    "noise_flags_present": [],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
+  },
+  "blockprint-cotton": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "No products found. Absent from premium D2C platform.",
+        "proves": "Block-print cotton kurti is not a premium trend at Nykaa's price band.",
+        "cannot_prove": "Whether demand exists at value price points; Nykaa's absence is expected for commoditized basics.",
+        "tension": "No tension with other sources; absence is consistent with value positioning."
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "3 products found, avg rank 12, avg rating 3.9, 101 reviews/30d. 2/3 have moderate discount (25-30%), 1/3 strategic pricing (10% off).",
+        "proves": "Demand exists in organized mass retail with moderate discount dependency.",
+        "cannot_prove": "Whether demand is style-driven or price-driven; discount distortion risk is high.",
+        "tension": "Moderate discounts create tension with Meesho's low-price volume; suggests price sensitivity."
+      },
+      {
+        "source": "Meesho",
+        "signal": "1 product found, 15,000+ units sold, 340 resellers, 18% MoM reseller growth, price \u20b9249.",
+        "proves": "Strong volume signal in tier-2/3/4 markets at low price point.",
+        "cannot_prove": "Whether demand is sustainable or a one-time fad; reseller growth not accelerating.",
+        "tension": "Low price (\u20b9249) vs Myntra's \u20b9499-599 creates price gap tension; Nykaa absent."
+      },
+      {
+        "source": "Internal POS",
+        "signal": "Similar past SKU: 78% sell-through, 44% margin, 8% markdown, stockouts in 45 stores, 34% repeat buy, 4% returns.",
+        "proves": "Block-print cotton kurti is a proven winner for our store base with strong repeat and low returns.",
+        "cannot_prove": "Whether current designs will match past performance (design fatigue risk).",
+        "tension": "Internal success strongly supports buying, but external sources show discount dependency and price gaps."
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Internal POS shows proven success, but Myntra/Ajio signals are mixed with moderate discounts, and Meesho shows strong volume at much lower price. Nykaa absence is expected.",
+        "key_convergences": "All sources agree block-print cotton kurti has demand across value segments. Internal POS and Meesho both show strong volume. Myntra/Ajio confirms presence."
+      }
+    ],
+    "headline": "All sources converge on demand for block-print cotton kurti, but discount dependency on Myntra/Ajio and price gap with Meesho warrant caution.",
+    "conflicts": [
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Price point gap between Meesho (\u20b9249) and Myntra/Ajio (\u20b9499-599)",
+        "nykaa_says": "No data",
+        "myntra_says": "Products at \u20b9499-599 with moderate discounts",
+        "meesho_says": "Strong volume at \u20b9249",
+        "internal_says": "Past SKU sold at similar price band (not specified, but likely \u20b9399-599)",
+        "buyer_question": "Will our target customer pay \u20b9499-599 when Meesho offers similar at \u20b9249?",
+        "proves": "Demand exists at multiple price points, but price sensitivity is high.",
+        "cannot_prove": "Whether the Meesho buyer is the same as our store buyer; different segments may coexist.",
+        "raw_evidence_keys": [
+          "meesho_price_249",
+          "myntra_price_499_599"
+        ]
+      },
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Discount dependency on Myntra/Ajio vs clean demand on Meesho and Internal POS",
+        "nykaa_says": "No data",
+        "myntra_says": "2/3 products with moderate discount (25-30%), unclear driver",
+        "meesho_says": "No discount mentioned; volume at full price (\u20b9249)",
+        "internal_says": "Past SKU had only 8% markdown, high sell-through",
+        "buyer_question": "Is Myntra/Ajio demand inflated by discount, or is it genuine style preference?",
+        "proves": "Myntra/Ajio demand may be partially price-driven; Meesho and internal show cleaner signals.",
+        "cannot_prove": "Whether Myntra/Ajio would sustain without discounts; internal data suggests it might.",
+        "raw_evidence_keys": [
+          "myntra_discount_25_30",
+          "internal_markdown_8"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Strong demand for block-print cotton kurti across value segments",
+        "detail": "Meesho shows 15,000+ units sold, Myntra/Ajio has 3 products in top ranks, internal POS shows 78% sell-through. All point to a healthy category.",
+        "proves": "The trend has broad appeal from tier-2/3 to metro markets.",
+        "cannot_prove": "Whether the specific designs in current batch will match past performance."
+      },
+      {
+        "title": "Internal POS confirms category strength",
+        "detail": "Past similar SKU achieved 78% sell-through, 44% margin, low returns (4%), and stockouts in 45 stores. Buyer note indicates under-ordering.",
+        "proves": "Our store base has proven demand for this category.",
+        "cannot_prove": "Design fatigue risk; new designs may not repeat same performance."
+      }
+    ],
+    "upside_summary": "Block-print cotton kurti is a proven category with strong demand across channels. Internal POS shows high sell-through and repeat buy rate. Meesho volume confirms mass appeal. Opportunity to capture demand that we under-ordered last time.",
+    "catch_summary": "Myntra/Ajio demand shows moderate discount dependency, suggesting price sensitivity. Meesho's lower price point (\u20b9249) may undercut our pricing. Design fatigue is a risk if styles are too similar to past season.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe1",
+        "reason": "Absent but expected; no negative signal."
+      },
+      "myntra": {
+        "level": "\ud83d\udfe1",
+        "reason": "Moderate discount distortion; 2/3 products have unclear driver."
+      },
+      "meesho": {
+        "level": "\ud83d\udfe2",
+        "reason": "Strong volume signal with high reseller count and growth."
+      },
+      "internal": {
+        "level": "\ud83d\udfe2",
+        "reason": "High-quality ground truth data with proven success."
+      }
+    },
+    "bet_lean": "Deeper Buy",
+    "bet_rationale": "Internal POS confirms strong past performance with stockouts, and external sources show broad demand. The discount dependency on Myntra/Ajio is a medium concern but does not outweigh the convergence of signals. Increase order quantity by ~20% based on past under-ordering.",
+    "key_uncertainty": "Will the new designs avoid design fatigue and maintain the same sell-through as the previous season?",
+    "evidence_confidence": "HIGH",
+    "watch_triggers": [
+      "Myntra/Ajio discount levels increase beyond 30%",
+      "Meesho reseller growth decelerates or turns negative",
+      "Internal POS early sell-through for new batch drops below 50% in first 2 weeks",
+      "Competitor launches similar styles at lower price points"
+    ],
+    "missing_evidence": [
+      "Nykaa data is absent but expected; no conflict.",
+      "No data on social media buzz or influencer mentions for current designs.",
+      "No competitor pricing intelligence beyond Meesho."
+    ],
+    "demand_integrity": "Good overall. Internal POS and Meesho provide clean signals. Myntra/Ajio has moderate noise from discounts but not severe.",
+    "noise_flags_present": [
+      "Moderate Discount \u2014 Unclear Driver"
+    ],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
+  },
+  "bandhani-straight": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "1 product at \u20b91,490, 25% off, 4.1\u2605, 95 reviews, editorial placement. No full-price products.",
+        "proves": "Premium D2C brands are testing Bandhani prints at higher price points. Editorial placement suggests trend awareness.",
+        "cannot_prove": "Cannot prove strong premium demand \u2014 only 1 product, discounted, moderate reviews. No full-price signal.",
+        "tension": "Nykaa presence is weak vs Myntra and Meesho. Premium positioning may not trickle down to \u20b9499-799."
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "1 product at \u20b9649, 20% off, 4.3\u2605, 67 reviews, rank 35, not sponsored. Strategic Value Pricing.",
+        "proves": "Clean demand signal at mass retail price. Low discount + good rating = genuine style preference.",
+        "cannot_prove": "Cannot prove national scalability \u2014 only 1 product, moderate rank and reviews. No Ajio data.",
+        "tension": "Myntra signal is clean but limited. Aligns with Meesho on demand existence but not on price sensitivity."
+      },
+      {
+        "source": "Meesho",
+        "signal": "1 product at \u20b9279, 4,200+ units, 4.1\u2605, 980 reviews, 85 resellers, +35% reseller growth, accelerating.",
+        "proves": "Strong emerging volume in tier-2/3/4 markets. Reseller growth indicates grassroots demand.",
+        "cannot_prove": "Cannot prove demand at higher price points (\u20b9499-799). Price gap of \u20b9220 vs trend suggests extreme price sensitivity.",
+        "tension": "Meesho shows strong volume at \u20b9279, but target price band is \u20b9499-799. May not translate to higher price points."
+      },
+      {
+        "source": "Internal POS",
+        "signal": "Similar past SKU: 52% sell-through (target 65%), 32% margin (target 40%), 22% markdown. Regional: strong in West, weak in South/East.",
+        "proves": "Bandhani is a regional bet, not national. Proven demand in Gujarat/Rajasthan/Maharashtra.",
+        "cannot_prove": "Cannot prove whether a different design/color could unlock South/East demand.",
+        "tension": "Internal data contradicts national scalability implied by Myntra and Meesho. Regional pattern is a key constraint."
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Meesho volume at \u20b9279 vs target price \u20b9499-799 creates price sensitivity tension. Internal POS shows regional demand, not national \u2014 contradicts any assumption of pan-India appeal from Myntra/Meesho. Nykaa weak presence suggests premium demand is not yet proven.",
+        "key_convergences": "All sources show some demand for Bandhani prints. Myntra and Meesho both show positive signals (clean discount, accelerating resellers). Internal POS confirms strong demand in Western India."
+      }
+    ],
+    "headline": "\u26a1 Sources disagree: Meesho shows strong volume at \u20b9279, but target price band is \u20b9499-799; internal POS reveals regional demand, not national.",
+    "conflicts": [
+      {
+        "severity": "HIGH",
+        "flag": "[CONFLICT DETECTED: HIGH]",
+        "title": "Price sensitivity conflict: Meesho demand at \u20b9279 vs target price \u20b9499-799",
+        "nykaa_says": "No data at target price band (only \u20b91,490 product).",
+        "myntra_says": "One product at \u20b9649 (within band) with clean signal, but limited volume.",
+        "meesho_says": "Strong volume at \u20b9279, but no products at \u20b9499-799. Reseller growth suggests demand is price-driven.",
+        "internal_says": "Past SKU at similar price point had mixed results (52% sell-through, 22% markdown).",
+        "buyer_question": "Will demand at \u20b9279 translate to \u20b9499-799, or is the trend purely price-driven?",
+        "proves": "Meesho proves grassroots demand for Bandhani at ultra-low price.",
+        "cannot_prove": "Cannot prove demand at higher price points; price gap is large.",
+        "raw_evidence_keys": [
+          "meesho_price_279",
+          "target_price_band_499-799",
+          "internal_markdown_22pct"
+        ]
+      },
+      {
+        "severity": "HIGH",
+        "flag": "[CONFLICT DETECTED: HIGH]",
+        "title": "Regional vs national demand: Internal POS shows regional pattern, external sources suggest broader appeal",
+        "nykaa_says": "Only 1 product, no regional data.",
+        "myntra_says": "National platform, rank 35 suggests some national interest.",
+        "meesho_says": "Listings in Gujarat, Rajasthan, Maharashtra \u2014 aligns with internal POS regions.",
+        "internal_says": "Strong in West India, weak in South/East. National rollout failed.",
+        "buyer_question": "Should this be a regional buy (West India) or can a different execution unlock national demand?",
+        "proves": "Internal POS proves regional demand pattern.",
+        "cannot_prove": "Cannot prove whether external signals represent national demand or are driven by Western India.",
+        "raw_evidence_keys": [
+          "internal_regional_performance",
+          "meesho_regions",
+          "myntra_national_rank"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Bandhani print has genuine demand in Western India",
+        "detail": "Meesho shows strong volume in Gujarat, Rajasthan, Maharashtra. Internal POS confirms top regions Ahmedabad, Surat, Jaipur. Myntra product (Libas) likely sells well in those regions too.",
+        "proves": "Bandhani is a proven trend in Western India at multiple price points.",
+        "cannot_prove": "Cannot prove demand outside West India."
+      },
+      {
+        "title": "Clean demand signal at mass retail (Myntra) and grassroots (Meesho)",
+        "detail": "Myntra product has Strategic Value Pricing (low discount, good rating). Meesho shows accelerating reseller growth. Both indicate genuine style preference, not just discount-driven.",
+        "proves": "Bandhani print has organic demand beyond deep discounting.",
+        "cannot_prove": "Cannot prove that demand is strong enough at \u20b9499-799 to justify national rollout."
+      }
+    ],
+    "upside_summary": "Bandhani print has proven grassroots demand in Western India at ultra-low prices (\u20b9279) and a clean signal at mass retail (\u20b9649). Reseller growth on Meesho is accelerating (+35% MoM), indicating the trend is gaining momentum. If the price point can be justified at \u20b9499-799, there is potential to capture value-fashion demand in West India and possibly beyond.",
+    "catch_summary": "The price gap between Meesho's \u20b9279 and the target \u20b9499-799 is significant \u2014 demand may be highly price-sensitive. Internal POS data shows Bandhani is a regional trend, not national, with poor performance in South and East India. Nykaa's weak premium presence suggests limited trickle-down potential. A national buy would likely repeat past mistakes.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe1",
+        "reason": "Only 1 product found, discounted, moderate reviews. Presence is emerging but weak."
+      },
+      "myntra": {
+        "level": "\ud83d\udfe2",
+        "reason": "Clean signal: low discount, good rating, not sponsored. But only 1 product."
+      },
+      "meesho": {
+        "level": "\ud83d\udfe2",
+        "reason": "Strong volume, accelerating resellers, good rating. Price point is far below target band."
+      },
+      "internal": {
+        "level": "\ud83d\udfe2",
+        "reason": "Direct sales data with clear regional pattern. High relevance."
+      }
+    },
+    "bet_lean": "Small Trial",
+    "bet_rationale": "Evidence converges on Western India demand but conflicts on price sensitivity and national scalability. A small trial in West India stores at \u20b9599-699 can validate demand at the target price band without repeating a failed national rollout.",
+    "key_uncertainty": "Will consumers in West India pay \u20b9599-699 for a Bandhani kurti when Meesho offers similar at \u20b9279?",
+    "evidence_confidence": "MEDIUM",
+    "watch_triggers": [
+      "Meesho reseller growth continues above +30% MoM",
+      "Myntra rank improves into top 20 with sustained reviews",
+      "Nykaa adds more Bandhani products at full price",
+      "Internal POS trial in West India achieves >60% sell-through"
+    ],
+    "missing_evidence": [
+      "Ajio data (not provided)",
+      "Nykaa full-price product data",
+      "Consumer survey on willingness to pay \u20b9599-799 for Bandhani"
+    ],
+    "demand_integrity": "Mixed: Myntra signal is clean (Strategic Value Pricing), Meesho volume is genuine but at a much lower price. Internal POS shows regional demand but with markdowns.",
+    "noise_flags_present": [],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
+  },
+  "ajrakh-cotton": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "1 product at \u20b91,250, 5% discount, 4.7\u2605, limited stock, editorial featured",
+        "proves": "Early premium demand exists; full-price signal suggests genuine interest from niche buyers",
+        "cannot_prove": "Volume is tiny (65 reviews); cannot prove mass-market appeal or scalability",
+        "tension": "Premium price point (\u20b91,250) vs. trend price band (\u20b9499-799); may not trickle down"
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "1 product at \u20b9699, 0% discount, rank 55, 4.6\u2605, 42 reviews, 15 reviews/month",
+        "proves": "Clean demand signal at mass retail price; no discount distortion",
+        "cannot_prove": "Weak presence (only 1 product, rank 55); cannot prove strong or growing demand",
+        "tension": "Aligns with Nykaa on low discount but volume is low; Meesho shows early volume"
+      },
+      {
+        "source": "Meesho",
+        "signal": "1 product at \u20b9299, 480+ units sold, 4.3\u2605, 18 resellers, +28% reseller growth",
+        "proves": "Early price-sensitive demand in tier-2/3/4; reseller growth accelerating",
+        "cannot_prove": "Low price point (\u20b9299) may attract bargain hunters; cannot prove style-driven demand",
+        "tension": "Price gap vs. trend band (\u20b9499-799) suggests demand may be price-driven; Nykaa/Myntra show higher price acceptance"
+      },
+      {
+        "source": "Internal POS",
+        "signal": "No prior buy history; closest proxy: block print cotton performed well",
+        "proves": "No direct evidence; proxy suggests similar category may work",
+        "cannot_prove": "Cannot confirm or contradict external signals; no ground truth for Ajrakh print",
+        "tension": "Missing evidence \u2014 do not flag as conflict"
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Nykaa premium (\u20b91,250) vs. Meesho value (\u20b9299) creates wide price gap; Myntra weak presence suggests trend not yet mainstream",
+        "key_convergences": "All sources show low discount (0-5%) indicating genuine demand; all show good ratings (4.3-4.7\u2605); Meesho reseller growth accelerating"
+      }
+    ],
+    "headline": "\u26a1 Sources disagree: Nykaa shows premium niche demand at \u20b91,250, Meesho shows early value demand at \u20b9299, but Myntra weak \u2014 trend not yet mainstream",
+    "conflicts": [
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Price point divergence: Nykaa premium (\u20b91,250) vs. Meesho value (\u20b9299) vs. trend band (\u20b9499-799)",
+        "nykaa_says": "Demand exists at \u20b91,250 with minimal discount \u2014 premium niche",
+        "myntra_says": "One product at \u20b9699, rank 55 \u2014 weak signal at mid-price",
+        "meesho_says": "480+ units at \u20b9299 \u2014 early volume at low price",
+        "internal_says": "No prior data",
+        "buyer_question": "Will the trend sustain at \u20b9499-799, or is demand split between premium and bargain segments?",
+        "proves": "Genuine demand exists at both high and low ends, but middle is unproven",
+        "cannot_prove": "Cannot prove which price band will drive volume; risk of missing the sweet spot",
+        "raw_evidence_keys": [
+          "nykaa_avg_price_1250",
+          "meesho_price_299",
+          "myntra_price_699"
+        ]
+      },
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Marketplace presence weak despite early signals elsewhere",
+        "nykaa_says": "Emerging presence with editorial support",
+        "myntra_says": "Only 1 product, rank 55 \u2014 weak organized retail presence",
+        "meesho_says": "18 resellers, accelerating growth \u2014 early grassroots demand",
+        "internal_says": "No prior data",
+        "buyer_question": "Is the trend still too niche for mass retail, or is Myntra/Ajio lagging in assortment?",
+        "proves": "Trend is real but early; not yet validated by major marketplaces",
+        "cannot_prove": "Cannot prove that weak Myntra presence indicates low demand; could be assortment gap",
+        "raw_evidence_keys": [
+          "myntra_rank_55",
+          "meesho_reseller_growth_+28%",
+          "nykaa_editorial_featured"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Low discount across all sources",
+        "detail": "Nykaa 5%, Myntra 0%, Meesho not discounted \u2014 all products sell at or near full price",
+        "proves": "Demand is genuine, not discount-driven",
+        "cannot_prove": "Cannot prove demand is style-driven vs. supply scarcity"
+      },
+      {
+        "title": "Good ratings across platforms",
+        "detail": "Nykaa 4.7\u2605, Myntra 4.6\u2605, Meesho 4.3\u2605 \u2014 consistent quality perception",
+        "proves": "Product quality and design are well-received",
+        "cannot_prove": "Cannot prove repeat purchase or long-term trend"
+      }
+    ],
+    "upside_summary": "Ajrakh print shows genuine demand signals across premium (Nykaa) and value (Meesho) segments with minimal discount distortion. Reseller growth on Meesho (+28%) suggests grassroots momentum that could scale. The trend has editorial backing and good ratings, indicating style acceptance.",
+    "catch_summary": "Volume is still low across all sources \u2014 Nykaa has only 65 reviews, Myntra rank 55, Meesho 480 units. The wide price gap (\u20b9299 to \u20b91,250) creates uncertainty about the optimal price point for mass adoption. Internal POS has no prior data, so ground truth is missing.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe1",
+        "reason": "Small sample (1 product, 65 reviews) but clean full-price signal"
+      },
+      "myntra": {
+        "level": "\ud83d\udfe1",
+        "reason": "Weak presence (1 product, rank 55) but clean discount context"
+      },
+      "meesho": {
+        "level": "\ud83d\udfe1",
+        "reason": "Low volume (480 units) but accelerating reseller growth is promising"
+      },
+      "internal": {
+        "level": "\ud83d\udfe1",
+        "reason": "No prior data; proxy suggests category potential"
+      }
+    },
+    "bet_lean": "Small Trial",
+    "bet_rationale": "Early signals are promising but volume is low and price point is uncertain. A small trial at \u20b9599-699 (midpoint of trend band) can validate demand without overcommitting.",
+    "key_uncertainty": "Will the trend gain traction at \u20b9599-699, or is demand bifurcated between premium and bargain segments?",
+    "evidence_confidence": "MEDIUM",
+    "watch_triggers": [
+      "Myntra/Ajio adds more Ajrakh print products or rank improves",
+      "Meesho reseller count exceeds 50 or units sold exceed 2,000",
+      "Nykaa adds more brands or stock pressure increases",
+      "Internal POS trial sell-through rate >60%"
+    ],
+    "missing_evidence": [
+      "Search volume data (Google Trends or platform search rank)",
+      "Social media mentions or influencer coverage",
+      "Repeat purchase rate or customer retention data"
+    ],
+    "demand_integrity": "Clean \u2014 all products are Strategic Value Pricing or full-price; no discount distortion",
+    "noise_flags_present": [],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
+  },
+  "organza-embroidered": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "Strong presence, 1 product at \u20b91,890 with 15% discount, 4.3\u2605, 180 reviews, editorial featured.",
+        "proves": "Premium demand exists for organza embroidered kurtis at high price points, with editorial validation.",
+        "cannot_prove": "Whether demand is sustainable beyond wedding season, or if discount is driving purchase.",
+        "tension": "Nykaa's premium signal contrasts with Meesho's weak presence, suggesting limited mass-market traction."
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "Strong presence, 2 products at \u20b91,199-1,299 with 10% discount, 4.4-4.5\u2605, 47 reviews/month, rank 12-15.",
+        "proves": "Clean demand at mass-retail price points with low discount distortion; strategic value pricing.",
+        "cannot_prove": "Whether demand is style-driven or price-driven given low discount; rank may be influenced by brand strength.",
+        "tension": "Myntra's strong clean signal conflicts with Meesho's weak signal, indicating demand may be metro-centric."
+      },
+      {
+        "source": "Meesho",
+        "signal": "Weak presence, 1 product at \u20b9449, 950+ units sold, 3.5\u2605, 28 resellers, +5% growth, not accelerating.",
+        "proves": "Some price-sensitive demand exists in tier-2/3 regions, but volume is modest and not accelerating.",
+        "cannot_prove": "Whether demand is genuine or driven by low price; low rating suggests quality concerns.",
+        "tension": "Meesho's weak signal conflicts with Nykaa and Myntra's strong signals, suggesting limited mass-market adoption."
+      },
+      {
+        "source": "Internal POS",
+        "signal": "Past similar SKU success: 71% sell-through, 48% margin, 5% markdown, 3-week festive window.",
+        "proves": "Organza festive kurtis are proven winners in a tight window with strong margins and quick sell-through.",
+        "cannot_prove": "Whether the same pattern will repeat this year, or if pre-festive launch could extend window.",
+        "tension": "Internal data confirms demand but warns of narrow window, aligning with Nykaa's occasion-specific positioning."
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Nykaa and Myntra show strong premium/mass demand, but Meesho is weak, indicating limited tier-2/3 traction. Internal data confirms demand but only in a 3-week festive window.",
+        "key_convergences": "All sources agree organza embroidered kurtis have demand at premium and mass price points, with festive/wedding occasion focus. Discounts are low, suggesting genuine style-driven demand."
+      }
+    ],
+    "headline": "All sources converge on festive demand, but Meesho weakness and narrow window warrant caution",
+    "conflicts": [
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Meesho weak vs Nykaa/Myntra strong",
+        "nykaa_says": "Strong premium demand at \u20b91,890",
+        "myntra_says": "Strong mass demand at \u20b91,199-1,299 with clean signals",
+        "meesho_says": "Weak demand at \u20b9449 with low rating and modest volume",
+        "internal_says": "Past success in festive window, but tier-3 towns underperformed",
+        "buyer_question": "Is the trend limited to metro/premium buyers, or will it trickle down to value-fashion?",
+        "proves": "Demand is strong in organized retail but not yet in price-sensitive mass market.",
+        "cannot_prove": "Whether Meesho will pick up as festive season approaches, or if the trend is inherently premium.",
+        "raw_evidence_keys": [
+          "nykaa_presence:strong",
+          "marketplace_presence:strong",
+          "meesho_presence:weak"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "Festive/wedding occasion focus",
+        "detail": "Nykaa editorial placement, Myntra product names, and internal POS all point to festive/wedding use.",
+        "proves": "The trend is occasion-driven, not everyday wear.",
+        "cannot_prove": "Whether the occasion window can be extended beyond 3 weeks."
+      },
+      {
+        "title": "Low discount distortion",
+        "detail": "Nykaa (15% off), Myntra (10% off), and internal POS (5% markdown) all show minimal discounting.",
+        "proves": "Demand is style-driven, not price-driven.",
+        "cannot_prove": "Whether full-price demand would hold without any discount."
+      },
+      {
+        "title": "Strong ratings and reviews",
+        "detail": "Nykaa 4.3\u2605, Myntra 4.4-4.5\u2605, internal POS 71% sell-through.",
+        "proves": "Product quality and style are well-received.",
+        "cannot_prove": "Whether repeat purchases will occur (internal shows low repeat rate)."
+      }
+    ],
+    "upside_summary": "Organza embroidered kurtis show strong demand at premium and mass price points with low discount distortion. Internal POS confirms past success with 71% sell-through and 48% margin. The trend is validated by editorial placement and high ratings.",
+    "catch_summary": "Meesho presence is weak, suggesting limited tier-2/3 adoption. Internal data warns of a narrow 3-week festive window and low repeat rate. Over-committing could lead to post-festive markdowns.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe1",
+        "reason": "Only 1 product found, discount present, but editorial placement adds credibility."
+      },
+      "myntra": {
+        "level": "\ud83d\udfe2",
+        "reason": "2 products with clean strategic pricing, high ratings, and no noise flags."
+      },
+      "meesho": {
+        "level": "\ud83d\udfe1",
+        "reason": "Weak signal with low rating and modest volume; data is point-in-time."
+      },
+      "internal": {
+        "level": "\ud83d\udfe2",
+        "reason": "Ground truth from own stores with clear success metrics and actionable insight."
+      }
+    },
+    "bet_lean": "Small Trial",
+    "bet_rationale": "All sources converge on festive demand with clean signals, but Meesho weakness and narrow window limit confidence. A small trial in metro stores during pre-festive period can validate timing and tier-2 potential.",
+    "key_uncertainty": "Will Meesho demand accelerate as festive season approaches, or is the trend inherently premium?",
+    "evidence_confidence": "MEDIUM",
+    "watch_triggers": [
+      "Meesho reseller growth accelerates above +10% MoM",
+      "Myntra rank improves to top 5 without increased discount",
+      "Nykaa full-price products appear (no discount)",
+      "Internal POS pre-festive sell-through exceeds 50% in first 2 weeks"
+    ],
+    "missing_evidence": [
+      "Nykaa full-price product data (all discounted)",
+      "Meesho review velocity and repeat purchase data",
+      "Competitor pricing and assortment depth"
+    ],
+    "demand_integrity": "Clean - Strategic Value Pricing on Myntra, low discount on Nykaa, internal success. Meesho signal is weak but not distorted.",
+    "noise_flags_present": [],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
+  },
+  "linen-chinese-collar": {
+    "reasoning_trace": [
+      {
+        "source": "Nykaa",
+        "signal": "1 product at \u20b91,795, 20% off, 4.2\u2605, 150 reviews, featured in editorial edit.",
+        "proves": "Premium D2C brands are testing linen straight kurti with mandarin collar at \u20b91,795. Editorial placement suggests trend potential in workwear.",
+        "cannot_prove": "Cannot prove demand at mass price points (\u20b9699-999). Single product, moderate signal, no full-price sales.",
+        "tension": "Nykaa's premium positioning (\u20b91,795) conflicts with target price band (\u20b9699-999). Trickle-down potential exists but unproven."
+      },
+      {
+        "source": "Myntra/Ajio",
+        "signal": "2 products at \u20b9799, 15% off, avg rank 28.5, avg rating 3.85, 23 reviews/30d. Discount context: 'Moderate Discount \u2014 Unclear Driver'.",
+        "proves": "Organized mass retail has moderate presence at \u20b9799. Low discount (15%) suggests some genuine demand, but rank and reviews are modest.",
+        "cannot_prove": "Cannot prove demand is style-driven vs price-driven. Discount context flags uncertainty. Low review velocity (down-weighted 25%) weakens signal.",
+        "tension": "Myntra/Ajio signal is early/weak, conflicting with Nykaa's emerging premium signal. Both are weak but directionally aligned."
+      },
+      {
+        "source": "Meesho",
+        "signal": "1 product at \u20b9399, 220+ units sold, 3.2\u2605, 85 reviews, 12 resellers, +3% MoM growth, not accelerating.",
+        "proves": "Price-sensitive mass market shows weak volume at \u20b9399. Reseller count low, growth flat. Not a leading indicator.",
+        "cannot_prove": "Cannot prove demand at \u20b9699-999. Low rating (3.2) and weak reseller growth suggest limited appeal even at deep discount.",
+        "tension": "Meesho's weak signal conflicts with any positive demand narrative. Suggests the style may not resonate in tier-2/3/4 markets."
+      },
+      {
+        "source": "Internal POS",
+        "signal": "Similar SKU (Linen Straight Kurti SS23) stocked in 60/220 stores, 29% sell-through, 45% markdown, 24% return rate, 3% repeat. Underperformed.",
+        "proves": "Linen kurtis failed for our value-fashion customer base. High returns due to wrinkling. Only worked in South Mumbai.",
+        "cannot_prove": "Cannot prove whether a linen-blend (less wrinkling) at lower price could succeed. The past SKU was pure linen.",
+        "tension": "Internal POS strongly contradicts any positive external signal. HIGH conflict: our ground truth says linen kurtis don't work for our base."
+      },
+      {
+        "source": "synthesis",
+        "key_tensions": "Internal POS (past failure) vs Nykaa/Myntra (emerging/moderate signals). Meesho weak adds to negative. Nykaa premium price point far above target band.",
+        "key_convergences": "All external sources show weak-to-moderate signals. No source shows strong, clean demand. Myntra/Ajio and Nykaa both show presence but with caveats."
+      }
+    ],
+    "headline": "\u26a1 Sources disagree: Internal POS shows past failure with linen kurtis, while external signals are weak and discordant. No convergence.",
+    "conflicts": [
+      {
+        "severity": "HIGH",
+        "flag": "[CONFLICT DETECTED: HIGH]",
+        "title": "Internal POS past failure vs external emerging signals",
+        "nykaa_says": "Premium D2C testing linen straight kurti at \u20b91,795 with editorial support.",
+        "myntra_says": "Moderate presence at \u20b9799 with low discount, but demand integrity unclear.",
+        "meesho_says": "Weak volume at \u20b9399, low rating, flat reseller growth.",
+        "internal_says": "Similar linen kurti underperformed: 29% sell-through, 45% markdown, 24% returns. Our customer rejects linen.",
+        "buyer_question": "Can a linen-blend at \u20b9699-999 overcome the wrinkling/ironing issue that caused past failure?",
+        "proves": "Our customer base has rejected pure linen kurtis in the past. External signals are too weak to override this.",
+        "cannot_prove": "Whether a linen-blend (less wrinkling) at a lower price point could change the outcome.",
+        "raw_evidence_keys": [
+          "internal_sell_through",
+          "internal_return_rate",
+          "nykaa_product",
+          "myntra_products",
+          "meesho_product"
+        ]
+      },
+      {
+        "severity": "MEDIUM",
+        "flag": "[CONFLICT DETECTED: MEDIUM]",
+        "title": "Nykaa premium price vs target mass price band",
+        "nykaa_says": "Product at \u20b91,795, 20% off. Premium positioning.",
+        "myntra_says": "Products at \u20b9799, 15% off. Mass retail price.",
+        "meesho_says": "Product at \u20b9399. Deep value price.",
+        "internal_says": "Target price band \u20b9699-999. Past SKU was at similar price point.",
+        "buyer_question": "Is the Nykaa signal relevant for our \u20b9699-999 price band, or is it a different customer?",
+        "proves": "Nykaa shows premium D2C interest, but at 2x our target price. Trickle-down is possible but unproven.",
+        "cannot_prove": "Cannot prove that demand at \u20b91,795 translates to demand at \u20b9699-999.",
+        "raw_evidence_keys": [
+          "nykaa_price",
+          "myntra_price",
+          "meesho_price",
+          "internal_price_band"
+        ]
+      }
+    ],
+    "convergences": [
+      {
+        "title": "All external signals are weak",
+        "detail": "Nykaa (emerging, 1 product), Myntra/Ajio (moderate, low review velocity), Meesho (weak, flat growth). No source shows strong, clean demand.",
+        "proves": "The trend is not yet validated across any channel. Early stage with limited evidence.",
+        "cannot_prove": "Cannot prove the trend will not gain traction. It may be too early."
+      }
+    ],
+    "upside_summary": "Nykaa editorial placement and Myntra/Ajio presence at low discount suggest some initial interest in linen straight kurti with Chinese collar. If the wrinkling issue is solved with a linen-blend, there may be untapped demand in workwear segment.",
+    "catch_summary": "Internal POS data is a strong red flag: similar pure linen kurti failed with 29% sell-through and 24% returns. Meesho shows weak traction even at \u20b9399. The style may not resonate with value-fashion customers who prioritize low-maintenance fabrics.",
+    "source_quality": {
+      "nykaa": {
+        "level": "\ud83d\udfe1",
+        "reason": "Single product, moderate signal, no full-price sales. Editorial placement adds weight but limited data."
+      },
+      "myntra": {
+        "level": "\ud83d\udfe1",
+        "reason": "Two products, low discount, but review velocity down-weighted 25% due to unclear discount driver. Moderate presence."
+      },
+      "meesho": {
+        "level": "\ud83d\udfe1",
+        "reason": "Weak volume, low rating, flat growth. Data is point-in-time but consistent with weak demand."
+      },
+      "internal": {
+        "level": "\ud83d\udfe2",
+        "reason": "Ground truth from 60 stores. Clear underperformance with high returns. Highly reliable for our customer base."
+      }
+    },
+    "bet_lean": "Monitor Only",
+    "bet_rationale": "Internal POS strongly contradicts external signals. Past failure with linen kurtis is a critical red flag. External signals are too weak to justify even a small trial. Wait for evidence that a linen-blend version can overcome the wrinkling issue.",
+    "key_uncertainty": "Can a linen-blend (less wrinkling) at \u20b9699-999 achieve acceptable sell-through and return rates in our stores?",
+    "evidence_confidence": "LOW",
+    "watch_triggers": [
+      "Nykaa adds more products or full-price sales",
+      "Myntra/Ajio rank improves above 20 with higher review velocity",
+      "Meesho reseller growth accelerates above 10% MoM",
+      "Internal POS test of linen-blend kurti shows improved sell-through"
+    ],
+    "missing_evidence": [
+      "Consumer survey data on linen vs linen-blend preference",
+      "Return rate data for linen-blend kurtis from other retailers",
+      "Regional demand data beyond Mumbai for linen workwear"
+    ],
+    "demand_integrity": "Low integrity: external signals are weak and discordant; internal data strongly negative. No clean convergence.",
+    "noise_flags_present": [
+      "Moderate Discount \u2014 Unclear Driver"
+    ],
+    "_mode": "disagreement_engine",
+    "_has_trace": 5
   }
 }
