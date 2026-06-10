@@ -1,13 +1,13 @@
 """
 Live Google Shopping — Real-Time Price Comparison
 --------------------------------------------------
-Uses SerpAPI's Google Shopping engine to pull live product listings,
+Uses SearchAPI.io's Google Shopping engine to pull live product listings,
 pricing, ratings, and seller data from Google Shopping search results.
 
 Falls back gracefully to cached data when API key is missing or credits exhausted.
 
 Env var: GOOGLE_SHOPPING_API_KEY
-Credits: 100 free searches/month on SerpAPI free tier
+Provider: SearchAPI.io (https://www.searchapi.io)
 
 Usage:
     from sources.google_shopping import search_google_shopping
@@ -25,7 +25,7 @@ from datetime import datetime
 DATA_DIR = Path(__file__).parent.parent / "data"
 CACHE_FILE = DATA_DIR / "google_shopping_cache.json"
 
-SERPAPI_BASE = "https://serpapi.com/search"
+SEARCHAPI_BASE = "https://www.searchapi.io/api/v1/search"
 
 _SSL_CTX = ssl.create_default_context()
 _SSL_CTX.check_hostname = False
@@ -64,7 +64,7 @@ def search_google_shopping(query: str, use_cache: bool = True) -> dict:
             "hl": "en",
             "api_key": api_key,
         })
-        url = f"{SERPAPI_BASE}?{params}"
+        url = f"{SEARCHAPI_BASE}?{params}"
 
         req = urllib.request.Request(url, headers={"User-Agent": "KurtiTrendEngine/1.0"})
         with urllib.request.urlopen(req, timeout=15, context=_SSL_CTX) as resp:
