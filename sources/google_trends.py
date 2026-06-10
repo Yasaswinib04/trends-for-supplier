@@ -42,47 +42,74 @@ WINDOW_MAP = {
 }
 
 # Festive season date ranges (Indian retail calendar)
-# Each entry: (this_year_start, this_year_end, label)
-# pytrends format: "YYYY-MM-DD YYYY-MM-DD"
-def _festive_range(festive_id):
-    """Return (timeframe_str, label, comparison_year_timeframe) for a festive season."""
-    now = datetime.now()
-    year = now.year
-    ly = year - 1  # last year
+# Window: 14 days before + 3 days after each festival date
+# Uses actual known dates for 2025 and 2026 festivals
 
-    festive = {
+def _festive_range(festive_id):
+    """Return ranges for a festive season."""
+    known = {
+        "diwali": {
+            "2025": "2025-10-20",
+            "label": "Diwali",
+        },
         "holi": {
-            "range_this": f"{year}-02-20 {year}-03-25",
-            "range_last": f"{ly}-02-20 {ly}-03-25",
+            "2026": "2026-03-04",
+            "2025": "2025-03-14",
             "label": "Holi",
         },
         "ramadan": {
-            "range_this": f"{year}-03-01 {year}-04-20",
-            "range_last": f"{ly}-03-01 {ly}-04-20",
+            "2026": "2026-03-20",
+            "2025": "2025-03-30",
             "label": "Ramadan / Eid",
         },
-        "diwali": {
-            "range_this": f"{year}-09-25 {year}-11-10",
-            "range_last": f"{ly}-09-25 {ly}-11-10",
-            "label": "Diwali",
-        },
-        "wedding": {
-            "range_this": f"{ly}-11-01 {year}-02-28",
-            "range_last": f"{ly-1}-11-01 {ly}-02-28",
-            "label": "Wedding Season",
-        },
         "summer": {
-            "range_this": f"{year}-03-15 {year}-06-15",
-            "range_last": f"{ly}-03-15 {ly}-06-15",
-            "label": "Summer",
-        },
-        "navratri": {
-            "range_this": f"{year}-09-15 {year}-10-15",
-            "range_last": f"{ly}-09-15 {ly}-10-15",
-            "label": "Navratri / Dussehra",
+            "2025": "2025-04-01",
+            "label": "Summer Vacation",
         },
     }
-    return festive.get(festive_id)
+
+    info = known.get(festive_id)
+    if not info:
+        return None
+
+    label = info["label"]
+
+    def window(date_str):
+        """Return 'YYYY-MM-DD YYYY-MM-DD' for 14d before to 3d after."""
+        from datetime import datetime, timedelta
+        dt = datetime.strptime(date_str, "%Y-%m-%d")
+        start = (dt - timedelta(days=14)).strftime("%Y-%m-%d")
+        end = (dt + timedelta(days=3)).strftime("%Y-%m-%d")
+        return f"{start} {end}"
+
+    # Build this_year and last_year based on what's available
+    now = datetime.now()
+    year = now.year
+    ly = year - 1
+
+    range_this = None
+    range_last = None
+
+    # Try this year's date (e.g., Holi 2026)
+    if str(year) in info and info[str(year)]:
+        range_this = window(info[str(year)])
+
+    # Try last year's date
+    if str(ly) in info and info[str(ly)]:
+        range_last = window(info[str(ly)])
+
+    # Fallback: if only one date known, use it as last_year
+    if not range_last:
+        for y, d in info.items():
+            if y.isdigit():
+                range_last = window(d)
+                break
+
+    return {
+        "range_this": range_this,
+        "range_last": range_last,
+        "label": label,
+    }
 
 
 def load_cache():
@@ -486,7 +513,7 @@ def get_festive_comparison(terms, festive_id, geo="IN"):
     Compare this year's festive season search data vs. last year's same period.
 
     Returns:
-        dict with this_year, last_year, and comparison metrics.
+        dict with this_year (if available), last_year, and comparison metrics.
     """
     festive = _festive_range(festive_id)
     if not festive:
@@ -494,45 +521,57 @@ def get_festive_comparison(terms, festive_id, geo="IN"):
 
     result = {}
 
-    try:
-        ty = fetch_google_trends(terms, geo=geo, timeframe=festive["range_this"],
-                                  use_cache=False)
-        result["this_year"] = {
-            "period": festive["range_this"],
-            "label": festive["label"],
-            "year": datetime.now().year,
-            "interest": {},
-        }
-        for term, td in ty.get("interest_data", {}).items():
-            vals = td.get("weekly_values", [])
-            result["this_year"]["interest"][term] = {
-                "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
-                "peak": int(td.get("peak", 0)),
-                "trend": td.get("direction", "stable"),
+    if festive.get("range_this"):
+        try:
+            ty = fetch_google_trends(terms, geo=geo, timeframe=festive["range_this"],
+                                      use_cache=True)
+            result["this_year"] = {
+                "period": festive["range_this"],
+                "label": festive["label"],
+                "year": datetime.now().year,
+                "interest": {},
             }
-    except Exception as e:
-        result["this_year"] = {"error": str(e)[:80]}
+            interest = ty.get("interest_data", {})
+            if not interest:
+                result["this_year"]["note"] = "Using estimated trend data (pytrends unavailable)"
+                interest = _estimate_window_interest(terms, festive["range_this"])
+            for term, td in interest.items():
+                vals = td.get("weekly_values", [])
+                result["this_year"]["interest"][term] = {
+                    "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
+                    "peak": int(td.get("peak", 0)),
+                    "trend": td.get("direction", "stable"),
+                }
+        except Exception as e:
+            result["this_year"] = {"error": str(e)[:80], "note": "Using estimated data"}
+            result["this_year"]["interest"] = _estimate_window_interest(terms, festive["range_this"])
 
-    try:
-        ly = fetch_google_trends(terms, geo=geo, timeframe=festive["range_last"],
-                                  use_cache=False)
-        result["last_year"] = {
-            "period": festive["range_last"],
-            "label": festive["label"],
-            "year": datetime.now().year - 1,
-            "interest": {},
-        }
-        for term, td in ly.get("interest_data", {}).items():
-            vals = td.get("weekly_values", [])
-            result["last_year"]["interest"][term] = {
-                "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
-                "peak": int(td.get("peak", 0)),
-                "trend": td.get("direction", "stable"),
+    if festive.get("range_last"):
+        try:
+            ly = fetch_google_trends(terms, geo=geo, timeframe=festive["range_last"],
+                                      use_cache=True)
+            result["last_year"] = {
+                "period": festive["range_last"],
+                "label": festive["label"],
+                "year": datetime.now().year - 1,
+                "interest": {},
             }
-    except Exception as e:
-        result["last_year"] = {"error": str(e)[:80]}
+            interest = ly.get("interest_data", {})
+            if not interest:
+                result["last_year"]["note"] = "Using estimated trend data (pytrends unavailable)"
+                interest = _estimate_window_interest(terms, festive["range_last"])
+            for term, td in interest.items():
+                vals = td.get("weekly_values", [])
+                result["last_year"]["interest"][term] = {
+                    "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
+                    "peak": int(td.get("peak", 0)),
+                    "trend": td.get("direction", "stable"),
+                }
+        except Exception as e:
+            result["last_year"] = {"error": str(e)[:80], "note": "Using estimated data"}
+            result["last_year"]["interest"] = _estimate_window_interest(terms, festive["range_last"])
 
-    # Compute YoY comparison
+    # Compute YoY comparison (only where both exist)
     result["comparison"] = {}
     ty_interest = result.get("this_year", {}).get("interest", {})
     ly_interest = result.get("last_year", {}).get("interest", {})
@@ -548,5 +587,50 @@ def get_festive_comparison(terms, festive_id, geo="IN"):
             "last_year_avg": ly_avg,
             "yoy_change_pct": yoy,
         }
+
+    return result
+
+
+def _estimate_window_interest(terms, date_range):
+    """Estimate search interest for a date window from fallback historical data
+    when pytrends is unavailable."""
+    fallback = _load_fallback_trends()
+    if not fallback:
+        return {}
+
+    # Parse window months from date_range ("YYYY-MM-DD YYYY-MM-DD")
+    try:
+        from datetime import datetime
+        parts = date_range.split()
+        start = datetime.strptime(parts[0], "%Y-%m-%d")
+        end = datetime.strptime(parts[1], "%Y-%m-%d")
+    except (ValueError, IndexError):
+        return {}
+
+    window_months = max(1, round((end - start).days / 30))
+    result = {}
+
+    for term_key, td in fallback.items():
+        # Match by term key
+        if any(t.lower() in term_key.lower() for t in terms):
+            monthly = td.get("monthly_values", [])
+            if not monthly:
+                continue
+
+            # Take last window_months from the data
+            window = monthly[-window_months:] if monthly else []
+            if window:
+                result[term_key] = {
+                    "current": td.get("current", 0),
+                    "peak": int(td.get("peak", max(window))),
+                    "avg_12m": round(sum(window) / max(len(window), 1), 1),
+                    "weekly_values": td.get("weekly_values", []),
+                    "direction": td.get("direction", "stable"),
+                    "growth_8w_pct": td.get("growth_8w_pct", 0),
+                    "monthly_values": window,
+                    "year_trajectory": td.get("year_trajectory", "unknown"),
+                    "seasonality_detected": td.get("seasonality", False),
+                    "_estimated": True,
+                }
 
     return result
