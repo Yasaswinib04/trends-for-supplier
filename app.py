@@ -31,6 +31,7 @@ _get_historical_trends = None
 _seed_historical_cache = None
 _fetch_timeframe_trends = None
 _get_festive_comparison = None
+_search_amazon = None
 KURTI_TERMS = [
     "chanderi kurti", "organza kurti", "block print kurti", "ajrakh kurti",
     "bandhani kurti", "ikat kurti", "linen kurti", "palazzo kurti set",
@@ -38,7 +39,7 @@ KURTI_TERMS = [
     "mirror work kurti", "kota doria kurti", "kalamkari kurti"
 ]
 try:
-    from sources.live_marketplace import search_all_platforms as _get_live_marketplace
+    from sources.rainforest import search_amazon as _search_amazon
     from sources.google_shopping import get_price_context_for_trend as _get_google_shopping
     from sources.google_trends import fetch_google_trends as _fetch_google_trends_fn
     from sources.google_trends import get_historical_trends as _get_historical_trends
@@ -141,6 +142,20 @@ def _seed_trends_cache():
 
 _trends_thread = threading.Thread(target=_seed_trends_cache, daemon=True)
 _trends_thread.start()
+
+# Pre-cache Amazon data for live pulse
+def _seed_amazon_cache():
+    if _search_amazon:
+        try:
+            print("📦 Pre-caching Amazon.in data...")
+            _search_amazon("kurti ethnic women", use_cache=False)
+            _search_amazon("chanderi kurti", use_cache=False)
+            print("📦 Amazon cache seeded")
+        except Exception as e:
+            print(f"⚠️ Amazon cache seed: {str(e)[:60]}")
+
+_amazon_thread = threading.Thread(target=_seed_amazon_cache, daemon=True)
+_amazon_thread.start()
 
 
 # ─── Decision Board ───
@@ -266,27 +281,25 @@ def _get_live_pulse():
         except Exception as e:
             pulse["error"] = (pulse.get("error") or "") + f" Trends: {str(e)[:60]}"
 
-    # ── Live Marketplace ──
-    if LIVE_SOURCES_AVAILABLE and _get_live_marketplace:
+    # ── Amazon Marketplace (Rainforest API) ──
+    if LIVE_SOURCES_AVAILABLE and _search_amazon:
         try:
-            for qt in ["chanderi kurti", "block print kurti", "cotton kurti",
-                        "palazzo kurti set", "anarkali kurti"]:
-                cross = _get_live_marketplace(qt, platforms=["myntra", "ajio"], use_cache=True)
-                for plat, pdata in cross.get("platform_results", {}).items():
-                    for p in pdata.get("products", [])[:3]:
-                        if p.get("price", 0) > 0:
-                            pulse["marketplace_signals"].append({
-                                "term": qt, "platform": plat,
-                                "name": (p.get("name") or "")[:50],
-                                "price": p.get("price", 0),
-                                "discount": p.get("discount_percentage", 0),
-                                "rating": p.get("rating", 0),
-                                "reviews": p.get("reviews", 0),
-                                "stock": p.get("stock_status", ""),
-                            })
+            az = _search_amazon("kurti ethnic women", use_cache=True)
+            for p in az.get("products", [])[:10]:
+                if p.get("price", 0) > 0:
+                    pulse["marketplace_signals"].append({
+                        "term": "kurti", "platform": "amazon",
+                        "name": (p.get("name") or "")[:50],
+                        "price": p.get("price", 0),
+                        "discount": p.get("discount_percentage", 0),
+                        "rating": p.get("rating", 0),
+                        "reviews": p.get("reviews", 0),
+                        "stock": p.get("stock_status", ""),
+                        "sponsored": p.get("is_sponsored", False),
+                    })
             pulse["scanned"] = True
         except Exception as e:
-            pulse["error"] = (pulse.get("error") or "") + f" Marketplace: {str(e)[:60]}"
+            pulse["error"] = (pulse.get("error") or "") + f" Amazon: {str(e)[:60]}"
 
     # ── Google Shopping ──
     if LIVE_SOURCES_AVAILABLE and _get_google_shopping and pulse["search_signals"]:
@@ -417,24 +430,29 @@ def api_product_deep_dive():
     result = {"query": query, "live": False, "products": [], "price_context": {},
               "trends": None, "noise_summary": None}
 
-    if LIVE_SOURCES_AVAILABLE and _get_live_marketplace:
+    if LIVE_SOURCES_AVAILABLE and _search_amazon:
         try:
-            cross = _get_live_marketplace(query, platforms=["myntra", "ajio", "amazon", "flipkart"],
-                                           use_cache=False)
+            az = _search_amazon(query, use_cache=False)
             result["live"] = True
             all_prods = []
-            for plat, pdata in cross.get("platform_results", {}).items():
-                for p in pdata.get("products", [])[:5]:
-                    all_prods.append({
-                        "platform": plat, "name": p.get("name", ""),
-                        "brand": p.get("brand", ""), "price": p.get("price", 0),
-                        "original_price": p.get("original_price", 0),
-                        "discount": p.get("discount_percentage", 0),
-                        "rating": p.get("rating", 0), "reviews": p.get("reviews", 0),
-                        "stock": p.get("stock_status", ""),
-                        "sponsored": p.get("is_sponsored", False),
-                    })
+            for p in az.get("products", [])[:15]:
+                all_prods.append({
+                    "platform": "amazon",
+                    "name": p.get("name", ""),
+                    "brand": p.get("brand", ""),
+                    "price": p.get("price", 0),
+                    "original_price": p.get("original_price", 0),
+                    "discount": p.get("discount_percentage", 0),
+                    "rating": p.get("rating", 0),
+                    "reviews": p.get("reviews", 0),
+                    "stock": p.get("stock_status", ""),
+                    "sponsored": p.get("is_sponsored", False),
+                })
             result["products"] = all_prods
+            result["avg_price"] = az.get("avg_price", 0)
+            result["avg_rating"] = az.get("avg_rating", 0)
+            result["price_range"] = az.get("price_range", {})
+            result["sponsored_count"] = az.get("sponsored_count", 0)
 
             if SIGNALS_AVAILABLE and _clean_marketplace and all_prods:
                 noisy = _clean_marketplace(all_prods)

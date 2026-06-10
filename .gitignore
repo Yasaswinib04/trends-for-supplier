@@ -8,5 +8,6 @@ data/telemetry.db
 data/google_shopping_cache.json
 data/live_marketplace_cache.json
 data/macro_demand_cache.json
+data/rainforest_cache.json
 data/social_bridge_cache.json
 data/syntheses_cache.json
