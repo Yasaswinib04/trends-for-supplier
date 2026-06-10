@@ -31,6 +31,59 @@ KURTI_TERMS = [
 
 KURTI_TERM_BATCHES = [KURTI_TERMS[i:i+5] for i in range(0, len(KURTI_TERMS), 5)]
 
+# Time window presets
+WINDOW_MAP = {
+    "1M": "today 1-m",
+    "3M": "today 3-m",
+    "6M": "today 6-m",
+    "YTD": None,  # computed dynamically
+    "1Y": "today 12-m",
+    "2Y": "today 24-m",
+}
+
+# Festive season date ranges (Indian retail calendar)
+# Each entry: (this_year_start, this_year_end, label)
+# pytrends format: "YYYY-MM-DD YYYY-MM-DD"
+def _festive_range(festive_id):
+    """Return (timeframe_str, label, comparison_year_timeframe) for a festive season."""
+    now = datetime.now()
+    year = now.year
+    ly = year - 1  # last year
+
+    festive = {
+        "holi": {
+            "range_this": f"{year}-02-20 {year}-03-25",
+            "range_last": f"{ly}-02-20 {ly}-03-25",
+            "label": "Holi",
+        },
+        "ramadan": {
+            "range_this": f"{year}-03-01 {year}-04-20",
+            "range_last": f"{ly}-03-01 {ly}-04-20",
+            "label": "Ramadan / Eid",
+        },
+        "diwali": {
+            "range_this": f"{year}-09-25 {year}-11-10",
+            "range_last": f"{ly}-09-25 {ly}-11-10",
+            "label": "Diwali",
+        },
+        "wedding": {
+            "range_this": f"{ly}-11-01 {year}-02-28",
+            "range_last": f"{ly-1}-11-01 {ly}-02-28",
+            "label": "Wedding Season",
+        },
+        "summer": {
+            "range_this": f"{year}-03-15 {year}-06-15",
+            "range_last": f"{ly}-03-15 {ly}-06-15",
+            "label": "Summer",
+        },
+        "navratri": {
+            "range_this": f"{year}-09-15 {year}-10-15",
+            "range_last": f"{ly}-09-15 {ly}-10-15",
+            "label": "Navratri / Dussehra",
+        },
+    }
+    return festive.get(festive_id)
+
 
 def load_cache():
     if CACHE_FILE.exists():
@@ -316,3 +369,122 @@ def _compute_trajectory(monthly: list) -> dict:
         "trough_month": trough_idx + 1,
         "volatility": volatility,
     }
+
+
+def fetch_timeframe_trends(terms, window="1Y", geo="IN", use_cache=True):
+    """
+    Fetch Google Trends for a specific time window or festive season.
+
+    Args:
+        terms: list of search terms
+        window: "1M" | "3M" | "6M" | "YTD" | "1Y" | "2Y"
+                or festive preset: "holi" | "ramadan" | "diwali" | "wedding" | "summer" | "navratri"
+        geo: country code (default "IN")
+        use_cache: use cached results if available
+
+    Returns:
+        Same format as fetch_google_trends, plus window metadata.
+    """
+    if window in WINDOW_MAP:
+        if window == "YTD":
+            now = datetime.now()
+            timeframe = f"{now.year}-01-01 {now.strftime('%Y-%m-%d')}"
+            label = "Year to Date"
+        else:
+            timeframe = WINDOW_MAP[window]
+            label = window
+
+        result = fetch_google_trends(terms, geo=geo, timeframe=timeframe,
+                                      use_cache=use_cache)
+        result["window"] = window
+        result["window_label"] = label
+        return result
+
+    # Festive season preset
+    festive = _festive_range(window)
+    if festive:
+        result = fetch_google_trends(terms, geo=geo,
+                                      timeframe=festive["range_this"],
+                                      use_cache=use_cache)
+        result["window"] = window
+        result["window_label"] = festive["label"]
+        result["date_range"] = festive["range_this"]
+        return result
+
+    # Fallback to 1Y
+    result = fetch_google_trends(terms, geo=geo, timeframe="today 12-m",
+                                  use_cache=use_cache)
+    result["window"] = "1Y"
+    result["window_label"] = "Last 12 Months"
+    return result
+
+
+def get_festive_comparison(terms, festive_id, geo="IN"):
+    """
+    Compare this year's festive season search data vs. last year's same period.
+
+    Returns:
+        dict with this_year, last_year, and comparison metrics.
+    """
+    festive = _festive_range(festive_id)
+    if not festive:
+        return {"error": f"Unknown festive preset: {festive_id}"}
+
+    result = {}
+
+    try:
+        ty = fetch_google_trends(terms, geo=geo, timeframe=festive["range_this"],
+                                  use_cache=False)
+        result["this_year"] = {
+            "period": festive["range_this"],
+            "label": festive["label"],
+            "year": datetime.now().year,
+            "interest": {},
+        }
+        for term, td in ty.get("interest_data", {}).items():
+            vals = td.get("weekly_values", [])
+            result["this_year"]["interest"][term] = {
+                "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
+                "peak": int(td.get("peak", 0)),
+                "trend": td.get("direction", "stable"),
+            }
+    except Exception as e:
+        result["this_year"] = {"error": str(e)[:80]}
+
+    try:
+        ly = fetch_google_trends(terms, geo=geo, timeframe=festive["range_last"],
+                                  use_cache=False)
+        result["last_year"] = {
+            "period": festive["range_last"],
+            "label": festive["label"],
+            "year": datetime.now().year - 1,
+            "interest": {},
+        }
+        for term, td in ly.get("interest_data", {}).items():
+            vals = td.get("weekly_values", [])
+            result["last_year"]["interest"][term] = {
+                "avg": round(sum(vals) / max(len(vals), 1), 1) if vals else 0,
+                "peak": int(td.get("peak", 0)),
+                "trend": td.get("direction", "stable"),
+            }
+    except Exception as e:
+        result["last_year"] = {"error": str(e)[:80]}
+
+    # Compute YoY comparison
+    result["comparison"] = {}
+    ty_interest = result.get("this_year", {}).get("interest", {})
+    ly_interest = result.get("last_year", {}).get("interest", {})
+    for term in set(list(ty_interest.keys()) + list(ly_interest.keys())):
+        ty_avg = ty_interest.get(term, {}).get("avg", 0)
+        ly_avg = ly_interest.get(term, {}).get("avg", 0)
+        if ly_avg > 0:
+            yoy = round(((ty_avg - ly_avg) / ly_avg) * 100, 1)
+        else:
+            yoy = 100.0 if ty_avg > 0 else 0.0
+        result["comparison"][term] = {
+            "this_year_avg": ty_avg,
+            "last_year_avg": ly_avg,
+            "yoy_change_pct": yoy,
+        }
+
+    return result

@@ -15,15 +15,29 @@
         {% endif %}
     </div>
 
-    <!-- ═══════ HISTORICAL TRENDS (12-Month) ═══════ -->
+    <!-- ═══════ HISTORICAL TRENDS (Time-Windowed) ═══════ -->
     {% if live_pulse.historical_trends %}
     <section class="mb-8" id="historical-section">
-        <div class="flex items-center gap-2 mb-4">
-            <span class="material-symbols-outlined text-tertiary text-lg">timeline</span>
-            <h2 class="text-lg font-medium">Historical Search Trends · 12 Months</h2>
-            <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{{ live_pulse.historical_trends|length }} terms tracked</span>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-tertiary text-lg">timeline</span>
+                <h2 class="text-lg font-medium">Historical Search Trends</h2>
+                <span class="text-[10px] bg-surface-container text-on-surface-variant px-2 py-0.5 rounded-full">{{ live_pulse.historical_trends|length }} terms</span>
+            </div>
+            <!-- Time window pills -->
+            <div class="flex flex-wrap gap-1">
+                <button onclick="switchWindow('1M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">1M</button>
+                <button onclick="switchWindow('3M', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">3M</button>
+                <button onclick="switchWindow('YTD', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">YTD</button>
+                <button onclick="switchWindow('1Y', this)" id="window-1Y" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-primary bg-primary-container text-on-primary-container font-semibold">1Y</button>
+                <span class="text-outline-variant mx-1">|</span>
+                <button onclick="switchFestive('holi', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Holi</button>
+                <button onclick="switchFestive('ramadan', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Ramadan</button>
+                <button onclick="switchFestive('diwali', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Diwali</button>
+                <button onclick="switchFestive('summer', this)" class="text-[10px] px-3 py-1 rounded-full border transition-colors border-outline-variant bg-surface-container text-on-surface-variant hover:border-primary">Summer</button>
+            </div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div id="historical-grid" class="grid grid-cols-1 md:grid-cols-2 gap-3">
             {% for h in live_pulse.historical_trends[:10] %}
             <div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3 hover:border-primary transition-colors cursor-pointer" onclick="document.getElementById('dive-query')?.setAttribute('value', '{{ h.term }}'); document.getElementById('dive-query')?.focus()">
                 <div class="flex-1 min-w-0">
@@ -33,7 +47,7 @@
                             {% if h.trajectory == 'rising' %}↗{% elif h.trajectory == 'declining' %}↘{% else %}→{% endif %} {{ h.trajectory }}
                         </span>
                     </div>
-                    <!-- Mini bar chart: last 12 months -->
+                    <!-- Mini bar chart -->
                     <div class="flex items-end gap-[2px] h-8 mb-1.5">
                         {% set monthly = h.monthly or [] %}
                         {% set mx = h.max_monthly or 1 %}
@@ -48,20 +62,18 @@
                         {% endfor %}
                         {% endif %}
                     </div>
-                    <div class="flex items-center gap-3 text-[10px] text-on-surface-variant">
+                    <div class="flex items-center gap-3 text-[10px] text-on-surface-variant" id="meta-{{ loop.index }}">
                         <span>Peak: {{ h.peak }}</span>
                         <span>Now: {{ h.current }}</span>
-                        <span class="{% if h.growth_8w > 10 %}text-success{% elif h.growth_8w < -10 %}text-error{% else %}text-on-surface-variant{% endif %} font-semibold">
-                            {{ '+' if h.growth_8w > 0 else '' }}{{ '%.0f'|format(h.growth_8w) }}%
-                        </span>
-                        {% if h.seasonality %}<span class="text-tertiary">🔁 seasonal</span>{% endif %}
-                        {% if h.volatility == 'high' %}<span class="text-tertiary">↕ volatile</span>{% endif %}
+                        <span class="{% if h.growth_8w > 10 %}text-success{% elif h.growth_8w < -10 %}text-error{% else %}text-on-surface-variant{% endif %} font-semibold">{{ '+' if h.growth_8w > 0 else '' }}{{ '%.0f'|format(h.growth_8w) }}%</span>
+                        {% if h.seasonality %}<span class="text-tertiary">seasonal</span>{% endif %}
+                        {% if h.volatility == 'high' %}<span class="text-tertiary">volatile</span>{% endif %}
                     </div>
                 </div>
             </div>
             {% endfor %}
         </div>
-        <p class="text-[10px] text-on-surface-variant mt-2 italic">Bar chart shows 12-month search interest pattern. Hover over bars for monthly values. Seasonal = recurring pattern. Volatile = erratic demand.</p>
+        <p class="text-[10px] text-on-surface-variant mt-2 italic" id="historical-note">Bar chart shows monthly search interest pattern. Hover over bars for monthly values. Toggle time windows above to adjust the view.</p>
     </section>
     {% endif %}
 
@@ -234,8 +246,7 @@ async function refreshLiveSignals() {
     btn.innerHTML = '<span class="material-symbols-outlined text-base animate-spin">progress_activity</span> Scanning...';
     btn.disabled = true;
     try {
-        var resp = await fetch('/api/live-scan');
-        var data = await resp.json();
+        await fetch('/api/live-scan');
         location.reload();
     } catch(e) {
         btn.innerHTML = orig;
@@ -243,5 +254,116 @@ async function refreshLiveSignals() {
     }
 }
 {% endif %}
+
+var _activeWindow = '1Y';
+var _activeFestive = '';
+
+function highlightPill(btn) {
+    document.querySelectorAll('#historical-section button').forEach(function(b) {
+        if (b === btn) {
+            b.className = b.className.replace(/border-outline-variant bg-surface-container text-on-surface-variant/g, 'border-primary bg-primary-container text-on-primary-container font-semibold');
+        } else if (b.getAttribute('onclick') && (b.getAttribute('onclick').startsWith('switchWindow') || b.getAttribute('onclick').startsWith('switchFestive'))) {
+            b.className = b.className.replace(/border-primary bg-primary-container text-on-primary-container font-semibold/g, 'border-outline-variant bg-surface-container text-on-surface-variant');
+        }
+    });
+}
+
+async function switchWindow(window, btn) {
+    highlightPill(btn);
+    _activeWindow = window;
+    _activeFestive = '';
+    await loadHistoricalData({window: window});
+}
+
+async function switchFestive(festive, btn) {
+    highlightPill(btn);
+    _activeFestive = festive;
+    _activeWindow = '';
+    await loadHistoricalData({festive: festive});
+}
+
+async function loadHistoricalData(params) {
+    var grid = document.getElementById('historical-grid');
+    if (!grid) return;
+    grid.innerHTML = '<div class="col-span-2 text-center py-8"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Loading...</p></div>';
+
+    var qs = Object.keys(params).map(function(k) { return k + '=' + encodeURIComponent(params[k]); }).join('&');
+    try {
+        var resp = await fetch('/api/historical-trends?' + qs);
+        var data = await resp.json();
+
+        if (data.comparison) {
+            // Festive comparison: show YoY data
+            renderFestiveComparison(data);
+            return;
+        }
+
+        var trends = data.trends || {};
+        var entries = Object.entries(trends);
+        if (entries.length === 0) {
+            grid.innerHTML = '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No trend data for this window. Try a longer range.</div>';
+            return;
+        }
+
+        var note = document.getElementById('historical-note');
+        if (note) note.textContent = 'Showing ' + (data.window_label || data.window) + ' data. Hover over bars for values. Toggle time windows above to adjust the view.';
+
+        grid.innerHTML = entries.slice(0, 10).map(function(e, i) {
+            var term = e[0], td = e[1];
+            var traj = td.trajectory || td.direction || 'stable';
+            var monthly = td.monthly_values || [];
+            var maxV = Math.max.apply(null, monthly.concat([1]));
+            var bars = monthly.map(function(v, j) {
+                var pct = Math.round((v / maxV) * 100);
+                var color = traj === 'rising' ? '#16a34a' : traj === 'declining' ? '#dc2626' : '#c3c6d8';
+                var opacity = traj === 'rising' ? 0.3 + (j/monthly.length)*0.7 : 0.6;
+                return '<div class="flex-1 rounded-t-sm" style="height:' + Math.min(pct,100) + '%;background:' + color + ';opacity:' + opacity + ';" title="Period ' + (j+1) + ': ' + v + '"></div>';
+            }).join('') || ('<div class="flex-1 rounded-t-sm opacity-20" style="height:30%;background:#c3c6d8;"></div>').repeat(12);
+
+            var growth = td.growth_8w || 0;
+            var growthColor = growth > 10 ? 'text-success' : growth < -10 ? 'text-error' : 'text-on-surface-variant';
+
+            return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 flex items-start gap-3">' +
+                '<div class="flex-1 min-w-0">' +
+                '<div class="flex items-center justify-between mb-1">' +
+                '<span class="text-sm font-semibold text-on-surface truncate">' + term + '</span>' +
+                '<span class="text-[10px] font-mono ml-2 whitespace-nowrap ' + (traj==='rising'?'text-success':traj==='declining'?'text-error':'text-on-surface-variant') + '">' +
+                (traj==='rising'?'↗':traj==='declining'?'↘':'→') + ' ' + traj + '</span></div>' +
+                '<div class="flex items-end gap-[2px] h-8 mb-1.5">' + bars + '</div>' +
+                '<div class="flex items-center gap-3 text-[10px] text-on-surface-variant">' +
+                '<span>Peak: ' + (td.peak||0) + '</span>' +
+                '<span>Now: ' + (td.current||0) + '</span>' +
+                '<span class="' + growthColor + ' font-semibold">' + (growth>0?'+':'') + Math.round(growth) + '%</span></div></div></div>';
+        }).join('');
+    } catch(e) {
+        grid.innerHTML = '<div class="col-span-2 text-xs text-error py-4 text-center">Error loading data: ' + e.message + '</div>';
+    }
+}
+
+function renderFestiveComparison(data) {
+    var grid = document.getElementById('historical-grid');
+    if (!grid) return;
+
+    var note = document.getElementById('historical-note');
+    var label = data.this_year ? (data.this_year.label || '') : '';
+    if (note) note.textContent = label + ': comparing ' + (data.this_year?data.this_year.year:'this year') + ' vs ' + (data.last_year?data.last_year.year:'last year') + ' search interest.';
+
+    var comp = data.comparison || {};
+    var entries = Object.entries(comp);
+
+    grid.innerHTML = entries.map(function(e) {
+        var term = e[0], cd = e[1];
+        var yoy = cd.yoy_change_pct || 0;
+        var yoyColor = yoy > 15 ? 'text-success' : yoy < -15 ? 'text-error' : 'text-on-surface-variant';
+        var arrow = yoy > 15 ? '↗' : yoy < -15 ? '↘' : '→';
+        return '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3">' +
+            '<div class="text-sm font-semibold text-on-surface mb-2">' + term + '</div>' +
+            '<div class="flex items-center gap-4 text-xs">' +
+            '<div><span class="text-on-surface-variant">This yr avg:</span> <span class="font-bold">' + (cd.this_year_avg||0).toFixed(0) + '</span></div>' +
+            '<div><span class="text-on-surface-variant">Last yr avg:</span> <span class="font-bold">' + (cd.last_year_avg||0).toFixed(0) + '</span></div>' +
+            '<div class="' + yoyColor + ' font-bold">' + arrow + ' ' + (yoy>0?'+':'') + yoy.toFixed(0) + '% YoY</div>' +
+            '</div></div>';
+    }).join('') || '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No comparison data available.</div>';
+}
 </script>
 {% endblock %}

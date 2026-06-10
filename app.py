@@ -29,12 +29,22 @@ _get_google_shopping = None
 _fetch_google_trends_fn = None
 _get_historical_trends = None
 _seed_historical_cache = None
+_fetch_timeframe_trends = None
+_get_festive_comparison = None
+KURTI_TERMS = [
+    "chanderi kurti", "organza kurti", "block print kurti", "ajrakh kurti",
+    "bandhani kurti", "ikat kurti", "linen kurti", "palazzo kurti set",
+    "cotton kurti", "anarkali kurti", "straight kurti", "chikankari kurti",
+    "mirror work kurti", "kota doria kurti", "kalamkari kurti"
+]
 try:
     from sources.live_marketplace import search_all_platforms as _get_live_marketplace
     from sources.google_shopping import get_price_context_for_trend as _get_google_shopping
     from sources.google_trends import fetch_google_trends as _fetch_google_trends_fn
     from sources.google_trends import get_historical_trends as _get_historical_trends
     from sources.google_trends import seed_historical_cache as _seed_historical_cache
+    from sources.google_trends import fetch_timeframe_trends as _fetch_timeframe_trends
+    from sources.google_trends import get_festive_comparison as _get_festive_comparison
     LIVE_SOURCES_AVAILABLE = True
 except ImportError:
     pass
@@ -312,6 +322,75 @@ def api_live_scan():
     """API endpoint: trigger a live market scan and return results as JSON."""
     pulse = _get_live_pulse()
     return jsonify(pulse)
+
+
+# ─── API: Historical Trends (Time-Windowed) ───
+
+@app.route("/api/historical-trends")
+def api_historical_trends():
+    """Returns Google Trends data for a specific time window or festive season."""
+    window = request.args.get("window", "1Y").strip()
+    festive = request.args.get("festive", "").strip()
+
+    if festive and _get_festive_comparison:
+        comp = _get_festive_comparison(KURTI_TERMS[:3], festive)
+        return jsonify(comp)
+
+    if _fetch_timeframe_trends:
+        try:
+            data = _fetch_timeframe_trends(KURTI_TERMS[:5], window=window)
+            terms_data = {}
+            for term, td in data.get("interest_data", {}).items():
+                vals = td.get("weekly_values", [])
+                monthly = td.get("monthly_values", [])
+                terms_data[term] = {
+                    "direction": td.get("direction", "stable"),
+                    "trajectory": td.get("year_trajectory", "unknown"),
+                    "current": td.get("current", 0),
+                    "peak": td.get("peak", 0),
+                    "avg": td.get("avg_12m", 0),
+                    "growth_8w": td.get("growth_8w_pct", 0),
+                    "weekly_values": vals[-8:] if vals else [],
+                    "monthly_values": monthly[-6:] if monthly else [],
+                    "live": data.get("live", False),
+                }
+            return jsonify({
+                "window": window,
+                "window_label": data.get("window_label", window),
+                "trends": terms_data,
+                "overall_direction": data.get("trend_direction", "unknown"),
+                "live": data.get("live", False),
+            })
+        except Exception as e:
+            return jsonify({"error": str(e)[:100], "window": window}), 500
+
+    # Fallback: use get_historical_trends
+    if _get_historical_trends:
+        hist = _get_historical_trends()
+        terms_data = {}
+        for term, td in hist.items():
+            if "kurti" in term.lower():
+                vals = td.get("weekly_values", [])
+                terms_data[term] = {
+                    "direction": td.get("direction", "stable"),
+                    "trajectory": td.get("year_trajectory", "unknown"),
+                    "current": td.get("current", 0),
+                    "peak": td.get("peak", 0),
+                    "avg": td.get("avg_12m", 0),
+                    "growth_8w": td.get("growth_8w_pct", 0),
+                    "weekly_values": vals[-8:] if vals else [],
+                    "monthly_values": td.get("monthly_values", [])[-6:],
+                    "live": False,
+                }
+        return jsonify({
+            "window": window,
+            "window_label": window,
+            "trends": terms_data,
+            "overall_direction": "unknown",
+            "live": False,
+        })
+
+    return jsonify({"error": "No trends source available", "window": window}), 503
 
 
 # ─── API: Product Deep Dive ───
