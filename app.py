@@ -15,6 +15,7 @@ from sources.meesho import get_meesho_data
 from sources.nykaa import get_nykaa_data
 from sources.reviews import get_review_signals
 from sources.internal_pos import get_internal_pos_data
+from sources.meta_ads import get_meta_ad_signals
 from synthesis.engine import synthesize, log_override, get_override_stats, init_telemetry
 try:
     from signals.noise_cleaner import apply_all_filters as _clean_marketplace
@@ -46,6 +47,7 @@ try:
     from sources.google_trends import seed_historical_cache as _seed_historical_cache
     from sources.google_trends import fetch_timeframe_trends as _fetch_timeframe_trends
     from sources.google_trends import get_festive_comparison as _get_festive_comparison
+    from signals.social_bridge import get_social_signals as _get_social_signals
     LIVE_SOURCES_AVAILABLE = True
 except ImportError:
     pass
@@ -120,7 +122,9 @@ def _precache_all():
         try:
             ny = get_nykaa_data(t["id"]); my = _enrich_marketplace_data(t)
             ms = get_meesho_data(t["id"]); pos = get_internal_pos_data(t["id"])
-            synth = synthesize(t, ny, my, ms, pos)
+            meta = get_meta_ad_signals(t["id"])
+            social = _get_social_signals(t["name"], t.get("search_terms", []), use_cache=True) if LIVE_SOURCES_AVAILABLE and _get_social_signals else None
+            synth = synthesize(t, ny, my, ms, pos, meta, social)
             _synth_cache[t["id"]] = synth
             print(f"  \u2705 {i+1}/8 {t['name'][:40]}")
         except Exception as e:
@@ -542,23 +546,25 @@ def api_product_deep_dive():
 
 
 # ─── Briefing Routes ───
-
 @app.route("/briefing/<trend_id>")
 def briefing(trend_id):
     trend = next((t for t in TRENDS if t["id"] == trend_id), None)
     if not trend:
         return "Trend not found", 404
-    nykaa = get_nykaa_data(trend_id)
+
+    nykaa  = get_nykaa_data(trend_id)
     myntra = _enrich_marketplace_data(trend)
     meesho = get_meesho_data(trend_id)
     reviews = get_review_signals(trend_id)
     internal = get_internal_pos_data(trend_id)
+    meta = get_meta_ad_signals(trend_id)
     prio, label, color = DECISION_MAP.get(trend_id, ("tracking", "TRACKING", "gray"))
     past = [b for b in PAST_BETS if b.get("current_trend_id") == trend_id]
+
     return render_template("briefing_loading.html",
         trend=trend, nykaa=nykaa, myntra=myntra, meesho=meesho,
-        reviews=reviews, internal=internal, prio=prio, label=label, color=color,
-        past_bets=past)
+        reviews=reviews, internal=internal, meta_ads=meta, prio=prio,
+        label=label, color=color, past_bets=past)
 
 @app.route("/api/briefing/<trend_id>")
 def api_briefing(trend_id):
@@ -567,11 +573,13 @@ def api_briefing(trend_id):
         return jsonify({"error": "Trend not found"}), 404
     if trend_id in _synth_cache:
         return jsonify(_synth_cache[trend_id])
-    nykaa = get_nykaa_data(trend_id)
+    nykaa  = get_nykaa_data(trend_id)
     myntra = _enrich_marketplace_data(trend)
     meesho = get_meesho_data(trend_id)
     internal = get_internal_pos_data(trend_id)
-    synth = synthesize(trend, nykaa, myntra, meesho, internal)
+    meta = get_meta_ad_signals(trend_id)
+    social = _get_social_signals(trend["name"], trend.get("search_terms", []), use_cache=True) if LIVE_SOURCES_AVAILABLE and _get_social_signals else None
+    synth = synthesize(trend, nykaa, myntra, meesho, internal, meta, social)
     _synth_cache[trend_id] = synth
     return jsonify(synth)
 

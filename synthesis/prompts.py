@@ -3,12 +3,14 @@ DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 
 DISAGREEMENT_ENGINE_PROMPT = """You are an adversarial retail analyst. Your job is to DETECT CONFLICTS between data sources — NOT to average them into a comfortable score. Help buyers reason through uncertainty.
 
-You receive evidence from 5 layers:
+You receive evidence from 6 layers:
 1. Nykaa — premium D2C (₹800-2,500). Zero-discount = real demand.
 2. Myntra/Ajio — mass retail (₹399-1,299). Discount level reveals price-driven vs style-driven demand.
 3. Meesho — price-sensitive tier-2/3/4 (₹199-500). Reseller growth = leading indicator.
 4. Internal POS — YOUR store data (ground truth). Past sell-through, margins, returns. If no prior data exists, do NOT flag it as a conflict — simply note it as missing evidence.
-5. LIVE MARKET DATA (when available): Real-time product listings from live APIs (Amazon, Flipkart, Myntra, Ajio) and Google Shopping price comparisons. This data is FRESH (fetched minutes ago) but may be sparse or inconsistent. Treat it as incremental signal — NOT as authoritative unless it aligns with the other 4 sources.
+5. Competitor Meta Ads — Instagram/Facebook ad activity from competitor brands. Long-running ads (21+ days) = strong conviction. New/short ads = testing. Multiple competitors advertising the same style = validated demand signal.
+6. YouTube Social Buzz — Haul video counts, creator diversity, affiliate link density. High affiliate density = commercial interest from creators. Low density = organic/genuine consumer interest. Use this to gauge whether demand is creator-driven or consumer-driven.
+7. LIVE MARKET DATA (when available): Real-time product listings from live APIs (Amazon.in via Rainforest) and Google Shopping price comparisons.
 
 ## Key patterns
 - Meesho strong + Nykaa strong + Myntra strong = clean convergence → Deeper Buy
@@ -17,6 +19,9 @@ You receive evidence from 5 layers:
 - Any source completely absent while another is strong = MEDIUM or HIGH conflict (depending on gap)
 - Internal POS contradicts external = HIGH conflict — trust your own store data
 - Internal POS has no prior data = do NOT flag as conflict. Note as missing evidence only.
+- Multiple competitors running 21+ day Meta ads for the same style = validated demand (Deeper Buy signal)
+- Competitor ads present but YouTube hauls show low organic buzz = paid push, not organic trend (Small Trial)
+- High YouTube affiliate density + low competitor ad spend = creator-led trend, early signal (Small Trial or Deeper Buy)
 - Live marketplace data shows products but Nykaa/Internal POS are silent → the trend may be emergent (not yet established), not absent. Context matters.
 
 ## Chain-of-Thought (REQUIRED — output reasoning_trace FIRST)
@@ -39,6 +44,8 @@ Return ONLY raw JSON. No markdown. First key MUST be reasoning_trace:
     {"source":"Myntra/Ajio","signal":"...","proves":"...","cannot_prove":"...","tension":"..."},
     {"source":"Meesho","signal":"...","proves":"...","cannot_prove":"...","tension":"..."},
     {"source":"Internal POS","signal":"...","proves":"...","cannot_prove":"...","tension":"..."},
+    {"source":"Meta Ads","signal":"...","proves":"...","cannot_prove":"...","tension":"..."},
+    {"source":"YouTube Social","signal":"...","proves":"...","cannot_prove":"...","tension":"..."},
     {"source":"synthesis","key_tensions":"...","key_convergences":"..."}
   ],
   "headline": "<1-line verdict. Lead with '⚡ Sources disagree' if conflicts exist. Start with 'All sources converge' if no conflicts.>",

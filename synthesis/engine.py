@@ -42,7 +42,8 @@ def _save_cache(cache):
         json.dump(cache, f, indent=2)
 
 
-def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None):
+def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None,
+               meta_ads_data=None, social_data=None):
     trend_id = trend["id"]
     cache = _load_cache()
     if trend_id in cache:
@@ -87,6 +88,12 @@ PRESENCE: {meesho_data.get("meesho_presence", "unknown")}. Units: {meesho_data.g
 HAS DATA: {"Yes" if (internal_data or {}).get("has_internal_data") else "No prior buy history. Do NOT flag as conflict."}
 {json.dumps(internal_data or {"has_internal_data": False}, indent=2)}
 
+## Source 5: Competitor Meta Ads (Instagram/Facebook)
+{_format_meta_ads(meta_ads_data)}
+
+## Source 6: YouTube Social Buzz
+{_format_social(social_data)}
+
 Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. Output the structured JSON as specified."""
 
     if not client:
@@ -97,7 +104,7 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
             "convergences": [],
             "upside_summary": "No API key configured.",
             "catch_summary": "Set DEEPSEEK_API_KEY to enable analysis.",
-            "bet_lean": "SKIP",
+            "bet_lean": "Monitor Only",
             "bet_rationale": "Cannot analyze without API key.",
             "watch_triggers": [],
             "missing_evidence": [],
@@ -200,3 +207,49 @@ def clear_telemetry():
     conn.execute("DELETE FROM overrides")
     conn.commit()
     conn.close()
+
+
+# ─── Prompt Formatting Helpers ───
+
+def _format_meta_ads(meta_ads_data):
+    """Format Meta Ads competitor data for the LLM prompt."""
+    if not meta_ads_data:
+        return "No Meta Ads data available for this trend."
+
+    competitors = meta_ads_data.get("competitors_backing_this_trend", [])
+    if not competitors:
+        return f"No competitors currently running ads for this trend. Ad conviction: {meta_ads_data.get('ad_conviction', 'unknown')}."
+
+    lines = [
+        f"Ad conviction: {meta_ads_data.get('ad_conviction', 'unknown')} "
+        f"({meta_ads_data.get('competitor_count', 0)} competitors actively advertising)"
+    ]
+    for c in competitors:
+        strength = c.get("signal_strength", "emerging")
+        lines.append(
+            f"- {c.get('brand', '?')}: {c.get('product', '?')} @ ₹{c.get('price', 0)} — "
+            f"{c.get('ad_running_days', 0)} days running ({strength} signal). "
+            f"Fabric: {c.get('fabric', 'unknown')}, Silhouette: {c.get('silhouette', 'unknown')}"
+        )
+    return "\n".join(lines)
+
+
+def _format_social(social_data):
+    """Format YouTube social buzz data for the LLM prompt."""
+    if not social_data:
+        return "No YouTube social buzz data available for this trend."
+
+    haul_count = social_data.get("hauls_in_last_30d", 0)
+    affiliate = social_data.get("affiliate_link_density", 0)
+    creators = social_data.get("unique_creators", 0)
+    buzz = social_data.get("social_buzz_level", "unknown")
+
+    if haul_count == 0 and creators == 0:
+        return f"No YouTube haul videos found for this trend in the last 30 days. Social buzz: {buzz}."
+
+    return (
+        f"Social buzz level: {buzz}. "
+        f"{haul_count} haul videos found in last 30 days from {creators} unique creators. "
+        f"Affiliate link density: {affiliate} links/video. "
+        f"{'High affiliate density suggests strong monetization intent from creators — product may be commercially viable.' if affiliate >= 1.0 else 'Low affiliate density — creators may be featuring organically, not commercially.'}"
+    )

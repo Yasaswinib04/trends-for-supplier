@@ -43,7 +43,9 @@ window.SRC_DATA = {
     myntra: {{ myntra | tojson }},
     meesho: {{ meesho | tojson }},
     reviews: {{ reviews | tojson }},
-    past_bets: {{ past_bets | tojson }}
+    past_bets: {{ past_bets | tojson }},
+    meta_ads: {{ meta_ads | tojson }},
+    social: null
 };
 
 fetch('/api/briefing/{{ trend.id }}')
@@ -96,6 +98,26 @@ function renderBriefing() {
     html += '<div class="flex-1 text-sm">' + (s.headline || '') + '</div>';
     html += '<div class="text-right ml-4 shrink-0"><div class="text-xs text-on-surface-variant mb-1">System Verdict</div>';
     html += '<div class="text-2xl font-bold" style="color:' + betClr + '">' + (s.bet_lean || 'Monitor Only') + '</div></div></div>';
+
+    // Competitor Ad Activity
+    var meta = window.SRC_DATA.meta_ads;
+    if (meta && (meta.competitor_count || 0) > 0) {
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-4 mb-4">';
+        html += '<div class="flex items-center gap-2 mb-2"><span class="material-symbols-outlined text-sm text-primary">ads_click</span><span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Competitor Ad Activity</span><span class="text-[10px] px-2 py-0.5 rounded-full ' + (meta.ad_conviction === 'high' ? 'bg-error-container text-on-error-container' : meta.ad_conviction === 'medium' ? 'bg-stagnant-container text-stagnant-on' : 'bg-surface-container text-on-surface-variant') + '">' + meta.ad_conviction + ' conviction</span></div>';
+        (meta.competitors_backing_this_trend || []).forEach(function(c){
+            html += '<div class="flex items-center justify-between text-xs border-b border-outline-variant pb-1 mb-1 last:border-0"><span class="truncate flex-1 mr-2">'+c.brand+': '+c.product.slice(0,40)+'</span><span class="text-on-surface-variant whitespace-nowrap">₹'+c.price+' · '+c.ad_running_days+'d ads</span></div>';
+        });
+        html += '</div>';
+    }
+
+    // Social Buzz
+    if (window.SRC_DATA.social) {
+        var soc = window.SRC_DATA.social;
+        html += '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 mb-4">';
+        html += '<div class="flex items-center gap-2 mb-1"><span class="material-symbols-outlined text-sm text-primary">play_circle</span><span class="text-xs font-semibold uppercase tracking-wide text-on-surface-variant">Social Buzz · YouTube</span></div>';
+        html += '<div class="text-xs text-on-surface-variant">' + soc.hauls_in_last_30d + ' haul videos · ' + soc.unique_creators + ' creators · ' + soc.affiliate_link_density + ' links/video · buzz: <span class="font-semibold">' + soc.social_buzz_level + '</span></div>';
+        html += '</div>';
+    }
 
     // Key Uncertainty
     html += '<div class="bg-surface p-4 rounded border border-outline-variant mb-4">';
