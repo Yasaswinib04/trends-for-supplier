@@ -66,7 +66,7 @@ function renderBriefing() {
     var rv = window.SRC_DATA.reviews;
     var pb = window.SRC_DATA.past_bets;
 
-    var betClr = s.bet_lean === 'STRONG BUY' ? '#16a34a' : s.bet_lean === 'CAUTIOUS BUY' ? '#2563eb' : s.bet_lean === 'SMALL TRIAL' ? '#ca8a04' : '#6b7280';
+    var betClr = s.bet_lean === 'Deeper Buy' ? '#16a34a' : s.bet_lean === 'Small Trial' ? '#ca8a04' : '#6b7280';
     var confClr = s.evidence_confidence === 'INSUFFICIENT' ? 'bg-error-container text-on-error-container border-error' : s.evidence_confidence === 'LOW' ? 'bg-stagnant-container text-[#2a1700] border-stagnant' : s.evidence_confidence === 'MEDIUM' ? 'bg-surface-container-high text-on-surface-variant border-outline-variant' : 'bg-success-container text-[#002204] border-success';
 
     var conflicts = s.conflicts || [];
@@ -75,7 +75,7 @@ function renderBriefing() {
     var html = '';
 
     // Insufficient data state
-    if (s.bet_lean === 'INSUFFICIENT DATA' || s.evidence_confidence === 'INSUFFICIENT') {
+    if (s.bet_lean === 'Monitor Only' || s.evidence_confidence === 'INSUFFICIENT') {
         html += '<div class="bg-error-container border border-error rounded p-6 mb-6 text-center">';
         html += '<div class="text-4xl mb-2">⚠️</div>';
         html += '<h2 class="text-xl font-bold mb-2 text-on-error-container">Insufficient Evidence to Recommend</h2>';
@@ -95,7 +95,7 @@ function renderBriefing() {
     html += '<div class="bg-surface-container-low border border-outline-variant rounded p-5 flex items-center justify-between mb-4">';
     html += '<div class="flex-1 text-sm">' + (s.headline || '') + '</div>';
     html += '<div class="text-right ml-4 shrink-0"><div class="text-xs text-on-surface-variant mb-1">System Verdict</div>';
-    html += '<div class="text-2xl font-bold" style="color:' + betClr + '">' + (s.bet_lean || 'WAIT') + '</div></div></div>';
+    html += '<div class="text-2xl font-bold" style="color:' + betClr + '">' + (s.bet_lean || 'Monitor Only') + '</div></div></div>';
 
     // Key Uncertainty
     html += '<div class="bg-surface p-4 rounded border border-outline-variant mb-4">';
@@ -198,7 +198,7 @@ function renderBriefing() {
     document.getElementById('briefing-content').innerHTML = html;
     document.querySelector('.sticky-foot').innerHTML = '<div class="max-w-6xl mx-auto w-full flex items-center justify-between"><div><span class="text-xs font-semibold">System:</span> <span class="text-sm font-semibold" style="color:' + betClr + '">' + (s.bet_lean || '') + '</span></div><div class="flex gap-2">' +
         '<button onclick="document.getElementById(\'override-modal\').classList.add(\'dd-open\')" class="px-4 py-2 border text-xs rounded hover:bg-surface-container">Override</button>' +
-        (s.bet_lean !== 'INSUFFICIENT DATA' ? '<button onclick="commitBet()" class="px-4 py-2 bg-[#16a34a] text-white text-xs rounded hover:opacity-90">Approve Bet</button> <span id="commit-success" class="hidden text-xs text-success ml-2">✅ Bet Logged</span>' : '') +
+        (s.bet_lean !== 'Monitor Only' ? '<button onclick="commitBet()" class="px-4 py-2 bg-[#16a34a] text-white text-xs rounded hover:opacity-90">Commit Bet</button> <span id="commit-success" class="hidden text-xs text-success ml-2">Bet Logged</span>' : '') +
         '</div></div>';
 }
 

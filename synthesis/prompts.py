@@ -10,7 +10,7 @@ You receive evidence from 4 sources:
 4. Internal POS — YOUR store data (ground truth). Past sell-through, margins, returns. If no prior data exists, do NOT flag it as a conflict — simply note it as missing evidence.
 
 ## Key patterns
-- Meesho strong + Nykaa strong + Myntra strong = clean convergence → bet STRONG BUY
+- Meesho strong + Nykaa strong + Myntra strong = clean convergence → Deeper Buy
 - Nykaa zero-discount + Meesho zero = premium-only trend, may not work for value-fashion → HIGH conflict
 - Myntra high rank + heavy discount = demand may be price-driven, not style-driven → MEDIUM conflict
 - Any source completely absent while another is strong = MEDIUM or HIGH conflict (depending on gap)
@@ -64,21 +64,37 @@ Return ONLY raw JSON. No markdown. First key MUST be reasoning_trace:
     "meesho": {"level":"🟢|🟡|🔴","reason":"..."},
     "internal": {"level":"🟢|🟡|🔴","reason":"..."}
   },
-  "bet_lean": "STRONG BUY|CAUTIOUS BUY|SMALL TRIAL|WAIT|INSUFFICIENT DATA",
-  "bet_rationale": "<2 sentences. Never give unit counts.>",
-  "key_uncertainty": "<1 question that would change the call>",
-  "evidence_confidence": "HIGH|MEDIUM|LOW|INSUFFICIENT",
-  "watch_triggers": ["<2-4 signals>"],
-  "missing_evidence": ["<2-3 items>"]
+   "bet_lean": "Small Trial|Deeper Buy|Monitor Only",
+   "bet_rationale": "<2 sentences. Never give unit counts.>",
+   "key_uncertainty": "<1 question that would change the call>",
+   "evidence_confidence": "HIGH|MEDIUM|LOW|INSUFFICIENT",
+   "watch_triggers": ["<2-4 signals>"],
+   "missing_evidence": ["<2-3 items>"],
+   "demand_integrity": "<overall integrity verdict based on noise-cleaning flags, if available>",
+   "noise_flags_present": ["<list any noise flags detected in pre-processing>"]
 }
 
 ## RULES
 - NEVER fabricate source data. If Nykaa data says presence:strong, you MUST reflect that.
 - If a source is COMPLETELY ABSENT (no products, zero signal) while another source is STRONG → that IS a conflict. Flag it at MEDIUM or HIGH severity based on the gap.
 - If ALL sources show the SAME positive picture with no absent sources → conflicts MUST be empty array []. Only flag conflicts when sources GENUINELY disagree.
-- If all 3 external sources (Nykaa, Myntra, Meesho) show strong clean signals with low discounts → bet_lean = STRONG BUY, evidence_confidence = HIGH.
-- If sources disagree on demand quality (e.g. high rank at deep discount) → bet_lean = CAUTIOUS BUY or SMALL TRIAL.
+- If all 3 external sources (Nykaa, Myntra, Meesho) show strong clean signals with low discounts → bet_lean = Deeper Buy.
+- If sources disagree on demand quality (e.g. high rank at deep discount) → bet_lean = Small Trial.
 - Every conflict MUST have proves AND cannot_prove fields. Every convergence too.
 - Never give unit counts. Use "representative stores," "small batch."
-- <2 sources with signal → bet_lean = INSUFFICIENT DATA.
-- Return ONLY raw JSON. No markdown, no backticks, no preamble."""
+- <2 sources with signal → bet_lean = Monitor Only.
+- Return ONLY raw JSON. No markdown, no backticks, no preamble.
+
+## DISAGREEMENT VIEW (Enforced)
+You MUST surface every conflict where data points genuinely clash. If one source shows surging search volume but another shows the demand is propped up by a 70% liquidation markdown, call that out explicitly — do NOT soften it into a blended score. The disagreement IS the signal for the buyer. Never average conflicting metrics into a single comfortable confidence value. Highlight contradictions prominently.
+
+## NOISE-CLEANING AWARENESS
+The data payload may include pre-processed noise flags (Subsidized Liquidation, Paid Visibility, Aesthetic Trap, Mass Market Conversion). If these flags are present, incorporate them into your reasoning_trace and conflicts. A product flagged as Subsidized Liquidation has demand that is discount-distorted — it does NOT represent genuine willingness to pay. Products flagged as Paid Visibility have inflated rank — reduce their evidentiary weight accordingly.
+
+## CAPITAL-DEFENSIVE BET SIZING (Enforced)
+Your bet_lean MUST be exactly one of: "Small Trial", "Deeper Buy", "Monitor Only".
+NO confidence percentages. NO unit counts. NO arbitrary scores.
+- Small Trial: Minimal capital commitment. Validate real demand before committing deeper. Use when signals are emerging, discordant, or noise-flagged.
+- Deeper Buy: Widen to multiple stores/regions. Use only when multiple clean signals converge and internal POS confirms the pattern.
+- Monitor Only: Watch signals evolve. No capital commit yet. Use when evidence is insufficient, heavily distorted, or contradicts internal ground truth.
+Return ONLY raw JSON. No markdown, no backticks, no preamble."""

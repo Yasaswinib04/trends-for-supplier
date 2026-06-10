@@ -4,7 +4,7 @@ Disagreement Engine Evaluation Suite
 Runs the LLM system prompt against 5 golden retail scenarios and asserts:
 1. The correct trap was detected (discount distortion, premium mirage, etc.)
 2. Conflicts were identified (the engine doesn't just average)
-3. The bet_lean is appropriate for the scenario (not STRONG BUY on traps)
+3. The bet_lean is appropriate for the scenario (not Deeper Buy on traps, Deeper Buy on clean convergence)
 
 Usage:
     python evals.py                    # Run all 5 cases
@@ -69,22 +69,19 @@ def run_eval_case(case):
             found = any(any(t.lower() in json.dumps(c).lower() for t in terms) for c in conflicts)
             ok, msg = assert_condition(found, f"Conflict mentions: {terms}", name)
             results.append((ok, msg))
-        elif assertion == "bet_lean is not STRONG BUY":
-            ok, msg = assert_condition(bet != "STRONG BUY", f"Bet lean '{bet}' is not STRONG BUY (correct for trap scenario)", name)
+        elif assertion == "bet_lean should be Small Trial or Monitor Only":
+            ok, msg = assert_condition(bet in ("Small Trial", "Monitor Only"), f"Bet lean '{bet}' is Small Trial or Monitor Only (correct for trap scenario)", name)
             results.append((ok, msg))
         elif assertion == "convergences array must not be empty":
             ok, msg = assert_condition(len(convergences) > 0, f"Convergences detected: {len(convergences)}", name)
             results.append((ok, msg))
-        elif assertion == "bet_lean should be STRONG BUY or CAUTIOUS BUY":
-            ok, msg = assert_condition(bet in ("STRONG BUY", "CAUTIOUS BUY"), f"Bet lean '{bet}' is buy-appropriate", name)
+        elif assertion == "bet_lean should be Deeper Buy":
+            ok, msg = assert_condition(bet == "Deeper Buy", f"Bet lean '{bet}' is Deeper Buy (correct for clean convergence)", name)
             results.append((ok, msg))
         elif assertion == "conflicts should be minimal (0 or LOW only)":
             no_high = not any(c.get("severity") == "HIGH" for c in conflicts)
             no_med = not any(c.get("severity") == "MEDIUM" for c in conflicts)
             ok, msg = assert_condition(no_high and no_med, "No HIGH/MEDIUM conflicts (clean convergence)", name)
-            results.append((ok, msg))
-        elif assertion == "bet_lean is not STRONG BUY":
-            ok, msg = assert_condition(bet != "STRONG BUY", f"Bet lean is not STRONG BUY", name)
             results.append((ok, msg))
 
     passed = sum(1 for r in results if r[0])

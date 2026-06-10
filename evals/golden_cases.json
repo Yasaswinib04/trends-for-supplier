@@ -9,7 +9,7 @@
         "conflicts array must not be empty",
         "at least one HIGH severity conflict",
         "at least one conflict mentions 'discount' or 'price-driven' or 'distortion'",
-        "bet_lean is not STRONG BUY"
+        "bet_lean should be Small Trial or Monitor Only"
       ],
       "trend": {
         "name": "Discount Trap Kurti",
@@ -59,7 +59,7 @@
         "conflicts array must not be empty",
         "at least one HIGH severity conflict",
         "at least one conflict mentions 'premium' or 'aspirational' or 'mass market' or 'absent'",
-        "bet_lean is not STRONG BUY"
+        "bet_lean should be Small Trial or Monitor Only"
       ],
       "trend": {
         "name": "Premium Mirage Kurti",
@@ -109,8 +109,8 @@
       "expected_trap": "mass_commodity",
       "assertions": [
         "conflicts array must not be empty",
-        "at least one conflict mentions 'commodity' or 'mass' or 'premium absent' or 'value-fashion'",
-        "bet_lean is not STRONG BUY"
+        "at least one conflict mentions 'price-sensitive' or 'premium' or 'commoditized' or 'volume'",
+        "bet_lean should be Small Trial or Monitor Only"
       ],
       "trend": {
         "name": "Mass Commodity Kurti",
@@ -158,7 +158,7 @@
       "expected_trap": "none",
       "assertions": [
         "convergences array must not be empty",
-        "bet_lean should be STRONG BUY or CAUTIOUS BUY",
+        "bet_lean should be Deeper Buy",
         "conflicts should be minimal (0 or LOW only)"
       ],
       "trend": {
@@ -218,7 +218,7 @@
       "assertions": [
         "conflicts array must not be empty",
         "at least one conflict mentions 'meesho' or 'mass market'",
-        "bet_lean is not STRONG BUY"
+        "bet_lean should be Small Trial or Monitor Only"
       ],
       "trend": {
         "name": "Niche Kurti",

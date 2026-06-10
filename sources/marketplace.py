@@ -61,6 +61,8 @@ def get_marketplace_data(trend_id):
                     "brand": product["brand"],
                     "price": product["price"],
                     "discount": product["discount"],
+                    "discount_percentage": product.get("discount_percentage", int(product["discount"].replace("%", ""))),
+                    "is_sponsored": product.get("is_sponsored", False),
                     "rank": product["rank"],
                     "reviews": product["reviews"],
                     "avg_rating": product["avg_rating"],

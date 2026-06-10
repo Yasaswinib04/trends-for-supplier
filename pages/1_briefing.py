@@ -60,7 +60,7 @@ st.markdown(f"## {synth.get('headline', 'Analysis')}")
 
 # --- Bet Lean ---
 bet = synth.get("bet_lean", "SKIP")
-bet_colors = {"STRONG BUY": "#16a34a", "CAUTIOUS BUY": "#2563eb", "TRIAL ONLY": "#ca8a04", "SKIP": "#dc2626"}
+bet_colors = {"Deeper Buy": "#16a34a", "Small Trial": "#ca8a04", "Monitor Only": "#6b7280", "SKIP": "#dc2626"}
 bc = bet_colors.get(bet, "#6b7280")
 st.markdown(f"""
 <div style="background:#f2f3ff;border:1px solid #c3c6d8;padding:20px;border-radius:4px;margin:16px 0;">

@@ -7,6 +7,12 @@ from openai import OpenAI
 from pathlib import Path
 from .prompts import DISAGREEMENT_ENGINE_PROMPT, DEEPSEEK_MODEL, DEEPSEEK_BASE_URL
 
+try:
+    from signals.noise_cleaner import apply_all_filters
+    NOISE_CLEANER_AVAILABLE = True
+except ImportError:
+    NOISE_CLEANER_AVAILABLE = False
+
 ROOT_DIR = Path(__file__).parent.parent
 DB_PATH = ROOT_DIR / "data" / "telemetry.db"
 
@@ -44,6 +50,24 @@ def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None):
 
     client = _get_client()
 
+    myntra_products = myntra_data.get("products_found", [])
+    noise_result = None
+    if NOISE_CLEANER_AVAILABLE and myntra_products:
+        prices = [p.get("price", 0) for p in myntra_products if p.get("price", 0) > 0]
+        avg_price = sum(prices) / max(len(prices), 1) if prices else 0
+        noise_result = apply_all_filters(myntra_products, social_buzz_high=False,
+                                          avg_price=float(avg_price))
+
+    noise_block = ""
+    if noise_result:
+        noise_block = f"""
+## NOISE-CLEANING PRE-PROCESSING
+Verdict: {noise_result['noise_summary']['verdict']}
+{chr(10).join(f"- {f}" for f in noise_result['noise_summary'].get('flags', []))}
+Price-Buzz Gap: {noise_result['price_buzz_gap'].get('price_buzz_gap_flag') or 'none'}
+"""
+        myntra_data = {**myntra_data, "products_found": noise_result["products"]}
+
     user_prompt = f"""## Trend Under Evaluation
 {json.dumps({"name": trend["name"], "price_band": trend.get("price_band", ""), "season": trend.get("season", ""), "silhouette": trend.get("silhouette", ""), "fabric": trend.get("fabric", "")}, indent=2)}
 
@@ -54,7 +78,7 @@ PRESENCE: {nykaa_data.get("nykaa_presence", "unknown")}. Full-price products: {n
 ## Source 2: Myntra/Ajio — Organized Mass Retail
 PRESENCE: {myntra_data.get("marketplace_presence", "unknown")}. Discount risk: {myntra_data.get("discount_distortion_risk", "unknown")}.
 {json.dumps(myntra_data, indent=2)}
-
+{noise_block}
 ## Source 3: Meesho — Price-Sensitive Mass Market
 PRESENCE: {meesho_data.get("meesho_presence", "unknown")}. Units: {meesho_data.get("total_units_sold", 0):,}. Resellers: {meesho_data.get("total_resellers", 0)}.
 {json.dumps(meesho_data, indent=2)}

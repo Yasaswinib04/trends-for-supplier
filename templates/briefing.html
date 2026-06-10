@@ -40,7 +40,7 @@
 <div class="max-w-6xl mx-auto px-6 py-6">
 
     <!-- STATE: Insufficient Data -->
-    {% if synth.bet_lean == 'INSUFFICIENT DATA' or synth.evidence_confidence == 'INSUFFICIENT' %}
+    {% if synth.bet_lean == 'Monitor Only' or synth.evidence_confidence == 'INSUFFICIENT' %}
     <div class="bg-error-container border border-error rounded p-6 mb-6 text-center">
         <div class="text-4xl mb-2">⚠️</div>
         <h2 class="text-xl font-bold mb-2 text-on-error-container">Insufficient Evidence to Recommend</h2>
@@ -76,14 +76,14 @@
     {% endif %}
 
     <!-- Headline + Bet -->
-    {% set bet_clr = "#16a34a" if synth.bet_lean == 'STRONG BUY' else '#2563eb' if synth.bet_lean == 'CAUTIOUS BUY' else '#ca8a04' if synth.bet_lean == 'SMALL TRIAL' else '#6b7280' %}
+    {% set bet_clr = "#16a34a" if synth.bet_lean == 'Deeper Buy' else '#ca8a04' if synth.bet_lean == 'Small Trial' else '#6b7280' %}
     <div class="bg-surface-container-low border border-outline-variant rounded p-5 flex items-center justify-between mb-4">
         <div class="flex-1">
             <div class="text-sm text-on-surface leading-relaxed">{{ synth.headline }}</div>
         </div>
         <div class="text-right ml-4 shrink-0">
             <div class="text-xs text-on-surface-variant mb-1">System Verdict</div>
-            <div class="text-2xl font-bold" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'WAIT' }}</div>
+            <div class="text-2xl font-bold" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'Monitor Only' }}</div>
         </div>
     </div>
 
@@ -303,7 +303,7 @@
                     <span class="text-xs font-semibold text-on-surface-variant uppercase tracking-wider">System Recommendation</span>
                 </div>
                 <div class="flex items-center gap-2 mt-0.5">
-                    <span class="text-lg font-bold whitespace-nowrap" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'WAIT' }}</span>
+                    <span class="text-lg font-bold whitespace-nowrap" style="color:{{ bet_clr }}">{{ synth.bet_lean or 'Monitor Only' }}</span>
                     <span class="text-sm font-medium text-on-surface line-clamp-2 md:line-clamp-1">— {{ synth.bet_rationale if synth.bet_rationale else '' }}</span>
                 </div>
             </div>

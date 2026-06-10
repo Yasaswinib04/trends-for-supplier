@@ -16,6 +16,12 @@ from sources.nykaa import get_nykaa_data
 from sources.reviews import get_review_signals
 from sources.internal_pos import get_internal_pos_data
 from synthesis.engine import synthesize, log_override, get_override_stats, init_telemetry
+try:
+    from signals.noise_cleaner import apply_all_filters as _clean_marketplace
+    SIGNALS_AVAILABLE = True
+except ImportError:
+    _clean_marketplace = None
+    SIGNALS_AVAILABLE = False
 
 app = Flask(__name__)
 DATA_DIR = Path(__file__).parent / "data"
