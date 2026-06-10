@@ -6,6 +6,7 @@ All operate BEFORE data reaches the LLM agent.
 """
 
 from .noise_cleaner import (
+    classify_discount_context,
     clean_discount_distortion,
     clean_sponsored_placement,
     clean_price_buzz_gap,
