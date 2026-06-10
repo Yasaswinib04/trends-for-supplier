@@ -30,11 +30,29 @@ def _clean_json(raw: str) -> str:
     return match.group(0) if match else stripped
 
 SYNTHESIS_CACHE_FILE = ROOT_DIR / "data" / "syntheses_cache.json"
+CACHE_TTL_HOURS = 12
+
 
 def _load_cache():
+    """Load cache; skip entries older than TTL (treat as expired)."""
     if SYNTHESIS_CACHE_FILE.exists():
         with open(SYNTHESIS_CACHE_FILE, "r") as f:
-            return json.load(f)
+            raw = json.load(f)
+        now = datetime.now(timezone.utc)
+        filtered = {}
+        for k, v in raw.items():
+            cached_at = v.get("cached_at")
+            if cached_at:
+                try:
+                    age_hours = (now - datetime.fromisoformat(cached_at)).total_seconds() / 3600
+                    if age_hours < CACHE_TTL_HOURS:
+                        filtered[k] = v
+                    continue
+                except (ValueError, TypeError):
+                    pass
+            # No cached_at or unparseable — keep old entries for backward compat
+            filtered[k] = v
+        return filtered
     return {}
 
 def _save_cache(cache):
@@ -43,10 +61,10 @@ def _save_cache(cache):
 
 
 def synthesize(trend, nykaa_data, myntra_data, meesho_data, internal_data=None,
-               meta_ads_data=None, social_data=None):
+               meta_ads_data=None, social_data=None, force_refresh=False):
     trend_id = trend["id"]
     cache = _load_cache()
-    if trend_id in cache:
+    if not force_refresh and trend_id in cache:
         return cache[trend_id]
 
     client = _get_client()
@@ -139,6 +157,7 @@ Analyze the evidence using the Disagreement Engine rules. Detect all conflicts. 
             if not has_proves:
                 result["_missing_proves"] = True
 
+        result["cached_at"] = datetime.now(timezone.utc).isoformat()
         cache[trend_id] = result
         _save_cache(cache)
         return result

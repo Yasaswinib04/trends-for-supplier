@@ -577,15 +577,20 @@ def api_briefing(trend_id):
     trend = next((t for t in TRENDS if t["id"] == trend_id), None)
     if not trend:
         return jsonify({"error": "Trend not found"}), 404
-    if trend_id in _synth_cache:
+
+    force_refresh = request.args.get("force", "").lower() in ("1", "true", "yes")
+
+    if not force_refresh and trend_id in _synth_cache:
         return jsonify(_synth_cache[trend_id])
+
     nykaa  = get_nykaa_data(trend_id)
     myntra = _enrich_marketplace_data(trend)
     meesho = get_meesho_data(trend_id)
     internal = get_internal_pos_data(trend_id)
     meta = get_meta_ad_signals(trend_id)
-    social = _get_social_signals(trend["name"], trend.get("search_terms", []), use_cache=True) if LIVE_SOURCES_AVAILABLE and _get_social_signals else None
-    synth = synthesize(trend, nykaa, myntra, meesho, internal, meta, social)
+    social = _get_social_signals(trend["name"], trend.get("search_terms", []), use_cache=not force_refresh) if LIVE_SOURCES_AVAILABLE and _get_social_signals else None
+    synth = synthesize(trend, nykaa, myntra, meesho, internal, meta, social,
+                       force_refresh=force_refresh)
     _synth_cache[trend_id] = synth
     return jsonify(synth)
 

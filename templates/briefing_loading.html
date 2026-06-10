@@ -84,6 +84,20 @@ function renderBriefing() {
         html += '<p class="text-sm text-on-error-container">' + (s.headline || 'Not enough data.') + '</p></div>';
     }
 
+    // Stale data banner
+    if (s.cached_at) {
+        var ageHours = (new Date() - new Date(s.cached_at)) / (1000 * 3600);
+        var ageLabel = '';
+        if (ageHours < 1) ageLabel = Math.round(ageHours * 60) + ' minutes ago';
+        else if (ageHours < 24) ageLabel = Math.round(ageHours) + ' hours ago';
+        else ageLabel = Math.round(ageHours / 24) + ' days ago';
+        if (ageHours > 4) {
+            html += '<div class="bg-stagnant-container border border-stagnant rounded p-3 mb-4 flex items-center justify-between">';
+            html += '<div class="flex items-center gap-2 text-sm"><span class="material-symbols-outlined text-sm text-stagnant">schedule</span> Analysis from <strong>' + ageLabel + '</strong></div>';
+            html += '<button onclick="refreshBriefing()" id="refresh-btn" class="text-[11px] px-3 py-1.5 bg-primary text-on-primary rounded hover:opacity-90 flex items-center gap-1"><span class="material-symbols-outlined text-sm">refresh</span> Refresh</button></div>';
+        }
+    }
+
     // Disagreement banner
     if (highConflicts.length) {
         html += '<div class="bg-error-container border border-error rounded p-5 mb-4">';
@@ -228,6 +242,28 @@ function commitBet() {
     fetch('/api/commit', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({trend_id:'{{ trend.id }}',trend_name:'{{ trend.name }}',system_bet:window.SYNTH?.bet_lean||'',notes:''})})
     .then(function() {
         var el = document.getElementById('commit-success'); if (el) el.classList.remove('hidden');
+    });
+}
+
+function refreshBriefing() {
+    var btn = document.getElementById('refresh-btn');
+    var orig = btn ? btn.innerHTML : '';
+    if (btn) { btn.innerHTML = '<span class="material-symbols-outlined text-sm animate-spin">progress_activity</span> Refreshing...'; btn.disabled = true; }
+    fetch('/api/briefing/{{ trend.id }}?force=1')
+    .then(function(r) { return r.json(); })
+    .then(function(synth) {
+        window.SYNTH = synth;
+        renderBriefing();
+        var container = document.getElementById('briefing-content');
+        if (container) {
+            var note = document.createElement('div');
+            note.className = 'text-[10px] text-on-surface-variant text-center mt-2 italic';
+            note.textContent = 'Analysis refreshed with current market data.';
+            container.appendChild(note);
+        }
+    })
+    .catch(function(e) {
+        if (btn) { btn.innerHTML = orig; btn.disabled = false; }
     });
 }
 </script>
