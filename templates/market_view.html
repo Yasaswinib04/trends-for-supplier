@@ -30,51 +30,12 @@
         </div>
         <button onclick="var c=document.getElementById('dive-query-container');c.classList.toggle('hidden');if(!c.classList.contains('hidden'))document.getElementById('dive-query').focus()" class="text-[10px] text-primary hover:underline mt-1">or type a custom search...</button>
         <div id="dive-results" class="hidden">
+            <div id="dive-header" class="flex items-start justify-between mb-3"></div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="dive-grid"></div>
-            <div id="dive-noise" class="mt-3"></div>
             <div id="dive-prices" class="mt-3"></div>
             <div id="dive-trends" class="mt-3"></div>
         </div>
     </div>
-
-    <!-- ═══ Live Market Pulse ═══ -->
-    {% if live_pulse.search_signals or live_pulse.marketplace_signals %}
-    <div class="bg-surface-container-lowest border border-outline-variant rounded p-5 mb-6">
-        <div class="flex items-center gap-2 mb-3">
-            <span class="material-symbols-outlined text-primary">radar</span>
-            <h2 class="text-base font-semibold">Live Market Scan</h2>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {% if live_pulse.search_signals %}
-            <div>
-                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Search Momentum (Google Trends)</span>
-                <div class="flex flex-wrap gap-2 mt-2">
-                    {% for s in live_pulse.search_signals[:6] %}
-                    <div class="bg-surface-container border border-outline-variant rounded px-3 py-1.5 flex items-center gap-2">
-                        <span class="text-xs font-medium">{{ s.term }}</span>
-                        <span class="text-success text-[10px] font-bold">↗ {{ s.momentum }}%</span>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
-            {% if live_pulse.price_signals %}
-            <div>
-                <span class="text-[11px] font-bold text-on-surface-variant uppercase tracking-wide">Google Shopping Price Range</span>
-                {% for ps in live_pulse.price_signals %}
-                <div class="mt-2 text-sm">
-                    <p class="font-medium">{{ ps.query }}</p>
-                    <div class="flex gap-2 mt-1">
-                        <span class="bg-surface-container px-2 py-0.5 rounded text-xs">₹{{ ps.low_price }}–₹{{ ps.high_price }}</span>
-                        <span class="text-xs text-on-surface-variant">{{ ps.listings }} listings</span>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-    {% endif %}
 
     <!-- ═══ Metrics ═══ -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -169,12 +130,12 @@ async function deepDive() {
     if (!q) return;
     var results = document.getElementById('dive-results');
     var grid = document.getElementById('dive-grid');
-    var noise = document.getElementById('dive-noise');
+    var header = document.getElementById('dive-header');
     var prices = document.getElementById('dive-prices');
     var trends = document.getElementById('dive-trends');
     results.classList.remove('hidden');
     grid.innerHTML = '<div class="col-span-2 text-center py-4"><div class="spinner" style="width:24px;height:24px;border:2px solid #ecedfa;border-top:2px solid #004ccd;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 8px;"></div><p class="text-xs text-on-surface-variant">Fetching live data...</p></div>';
-    noise.innerHTML = ''; prices.innerHTML = ''; trends.innerHTML = '';
+    header.innerHTML = ''; prices.innerHTML = ''; trends.innerHTML = '';
     try {
         var resp = await fetch('/api/product-deep-dive?q=' + encodeURIComponent(q));
         var data = await resp.json();
@@ -190,7 +151,11 @@ async function deepDive() {
             grid.innerHTML = '<div class="col-span-2 text-xs text-on-surface-variant py-4 text-center italic">No live listings found for "' + q + '". Try a different search term.</div>';
         }
         if (data.noise_summary) {
-            noise.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Noise Verdict: </span><span class="font-bold ' + (data.noise_summary.verdict.indexOf('DISTORTED')>=0?'text-error':'text-success') + '">' + data.noise_summary.verdict + '</span>' + (data.noise_summary.flags||[]).map(function(f){return '<div class="text-on-surface-variant mt-1">'+f+'</div>';}).join('') + '</div>';
+            var isDistorted = data.noise_summary.verdict.indexOf('DISTORTED') >= 0 || data.noise_summary.verdict.indexOf('NOISE') >= 0;
+            header.innerHTML = '<span class="text-xs text-on-surface-variant">' + data.products.length + ' live Amazon products</span>' +
+                '<span class="text-[10px] px-2 py-1 rounded-full border font-bold ' + (isDistorted ? 'bg-error-container text-on-error-container border-error' : 'bg-success-container text-on-success-container border-success') + '">' + data.noise_summary.verdict + '</span>';
+        } else {
+            header.innerHTML = '<span class="text-xs text-on-surface-variant">' + data.products.length + ' live Amazon products</span>';
         }
         if (data.price_context) {
             prices.innerHTML = '<div class="bg-surface-container-lowest border border-outline-variant rounded p-3 text-xs"><span class="font-semibold">Google Shopping: </span>₹' + data.price_context.price_low + '–₹' + data.price_context.price_high + ' (median ₹' + data.price_context.price_median + ') · ' + data.price_context.listings + ' listings · ' + data.price_context.stores + ' stores</div>';

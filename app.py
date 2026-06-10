@@ -278,8 +278,24 @@ def _get_live_pulse():
                     })
             pulse["search_signals"].sort(key=lambda s: -s["momentum"])
             pulse["scanned"] = True
-        except Exception as e:
-            pulse["error"] = (pulse.get("error") or "") + f" Trends: {str(e)[:60]}"
+        except Exception:
+            pass
+
+    # ── Fallback: generate search signals from historical trends ──
+    if not pulse["search_signals"] and pulse["historical_trends"]:
+        for h in pulse["historical_trends"]:
+            if h.get("direction") in ("rising", "surging", "stable"):
+                pulse["search_signals"].append({
+                    "term": h["term"],
+                    "direction": h["direction"],
+                    "momentum": h.get("current_vs_peak", 50),
+                    "growth_8w": h.get("growth_8w", 0),
+                    "trajectory": h.get("trajectory", "unknown"),
+                    "live": False,
+                })
+        pulse["search_signals"].sort(key=lambda s: -(s.get("growth_8w", 0)))
+        if not pulse["scanned"]:
+            pulse["scanned"] = True
 
     # ── Amazon Marketplace (Rainforest API) ──
     if LIVE_SOURCES_AVAILABLE and _search_amazon:
@@ -302,21 +318,26 @@ def _get_live_pulse():
             pulse["error"] = (pulse.get("error") or "") + f" Amazon: {str(e)[:60]}"
 
     # ── Google Shopping ──
-    if LIVE_SOURCES_AVAILABLE and _get_google_shopping and pulse["search_signals"]:
-        try:
-            top_term = pulse["historical_trends"][0]["term"] if pulse["historical_trends"] else "kurti"
-            gs = _get_google_shopping(top_term)
-            if gs.get("available"):
-                pulse["price_signals"] = [{
-                    "query": top_term,
-                    "listings": gs.get("listing_count", 0),
-                    "low_price": gs.get("observed_range", {}).get("low", 0),
-                    "high_price": gs.get("observed_range", {}).get("high", 0),
-                    "median_price": gs.get("observed_range", {}).get("median", 0),
-                    "stores": gs.get("store_diversity", 0),
-                }]
-        except Exception:
-            pass
+    if LIVE_SOURCES_AVAILABLE and _get_google_shopping:
+        top_term = None
+        if pulse["search_signals"]:
+            top_term = pulse["search_signals"][0]["term"]
+        elif pulse["historical_trends"]:
+            top_term = pulse["historical_trends"][0]["term"]
+        if top_term:
+            try:
+                gs = _get_google_shopping(top_term)
+                if gs.get("available"):
+                    pulse["price_signals"] = [{
+                        "query": top_term,
+                        "listings": gs.get("listing_count", 0),
+                        "low_price": gs.get("observed_range", {}).get("low", 0),
+                        "high_price": gs.get("observed_range", {}).get("high", 0),
+                        "median_price": gs.get("observed_range", {}).get("median", 0),
+                        "stores": gs.get("store_diversity", 0),
+                    }]
+            except Exception:
+                pass
 
     pulse["search_signals"] = pulse["search_signals"][:10]
     pulse["marketplace_signals"] = pulse["marketplace_signals"][:15]
